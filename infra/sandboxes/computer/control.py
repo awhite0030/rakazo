@@ -240,9 +240,12 @@ class Handler(BaseHTTPRequestHandler):
                             drop_native_capture(display)
                             handled = 0
                     if not handled:
-                        result = subprocess.run(argv, env={**os.environ, "DISPLAY": display})
-                        if result.returncode:
-                            raise RuntimeError("computer action failed")
+                        try:
+                            result = subprocess.run(argv, env={**os.environ, "DISPLAY": display}, timeout=10)
+                            if result.returncode:
+                                raise RuntimeError("computer action failed")
+                        except subprocess.TimeoutExpired:
+                            pass
                 settle_ms = max(0, min(int(body.get("settleMs", 0)), 5000))
                 if settle_ms:
                     time.sleep(settle_ms / 1000)
