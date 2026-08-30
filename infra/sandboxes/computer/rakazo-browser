@@ -33,7 +33,7 @@ clear_crash_state() {
     "$f" > "${f}.tmp" && mv "${f}.tmp" "$f"
 }
 
-if [ -d "$ACTUAL_PROFILE" ]; then
+if [ -d "$ACTUAL_PROFILE" ] && [ ! -e "$ACTUAL_PROFILE/SingletonLock" ]; then
   find "$ACTUAL_PROFILE" \( -name Preferences -o -name 'Local State' \) -type f 2>/dev/null |
     while IFS= read -r f; do
       clear_crash_state "$f" 2>/dev/null || rm -f "${f}.tmp"

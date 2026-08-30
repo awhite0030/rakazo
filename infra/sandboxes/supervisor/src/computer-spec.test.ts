@@ -237,6 +237,21 @@ describe("graphical computer spec", () => {
         const updatedLocalState = readFileSync(localStatePath, "utf8");
         expect(updatedLocalState).toContain('"exited_cleanly":true');
         expect(updatedLocalState).not.toMatch(/"exited_cleanly"\s*:\s*false/);
+
+        writeFileSync(prefsPath, '{\n  "profile": {\n    "exit_type": "Crashed"\n  }\n}\n');
+        writeFileSync(path.join(profile, "SingletonLock"), "");
+        const skipped = spawnSync("bash", [path.join(root, "rakazo-browser")], {
+          env: {
+            ...process.env,
+            DISPLAY: ":1",
+            HOME: home,
+            PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
+            RAKAZO_TEST_ARGS: capture,
+          },
+          encoding: "utf8",
+        });
+        expect(skipped.status, skipped.error?.message ?? skipped.stderr).toBe(0);
+        expect(readFileSync(prefsPath, "utf8")).toContain("Crashed");
       } finally {
         rmSync(temp, { recursive: true, force: true });
       }
