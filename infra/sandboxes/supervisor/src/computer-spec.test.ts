@@ -1,5 +1,13 @@
 import { spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -206,10 +214,7 @@ describe("graphical computer spec", () => {
         prefsPath,
         '{\n  "profile": {\n    "exit_type": "Crashed",\n    "exited_cleanly": false\n  }\n}\n',
       );
-      writeFileSync(
-        localStatePath,
-        '{\n  "profile": {\n    "exited_cleanly": false\n  }\n}\n',
-      );
+      writeFileSync(localStatePath, '{\n  "profile": {\n    "exited_cleanly": false\n  }\n}\n');
 
       try {
         const result = spawnSync("bash", [path.join(root, "rakazo-browser")], {
