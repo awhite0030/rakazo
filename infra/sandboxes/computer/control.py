@@ -182,6 +182,7 @@ def run_control_argv(argv, display):
         try:
             code = child.wait(timeout=LAUNCH_SPAWN_POLL_SEC)
         except subprocess.TimeoutExpired:
+            threading.Thread(target=child.wait, daemon=True).start()
             return
         if code:
             raise RuntimeError("computer action failed")
