@@ -184,42 +184,64 @@ describe("graphical computer spec", () => {
     },
   );
 
-  it("clears crashed state from Chromium preferences", () => {
-    const root = path.resolve(import.meta.dirname, "../../computer");
-    const temp = mkdtempSync(path.join(tmpdir(), "rakazo-browser-crash-"));
-    const bin = path.join(temp, "bin");
-    const home = path.join(temp, "home");
-    const chromium = path.join(bin, "chromium");
-    mkdirSync(bin);
-    writeFileSync(chromium, "#!/bin/sh\nexit 0\n");
-    chmodSync(chromium, 0o755);
+  it.skipIf(process.platform === "win32")(
+    "clears crashed state from Chromium preferences and Local State",
+    () => {
+      const root = path.resolve(import.meta.dirname, "../../computer");
+      const temp = mkdtempSync(path.join(tmpdir(), "rakazo-browser-crash-"));
+      const bin = path.join(temp, "bin");
+      const home = path.join(temp, "home");
+      const chromium = path.join(bin, "chromium");
+      const capture = path.join(temp, "args");
+      mkdirSync(bin);
+      writeFileSync(chromium, '#!/bin/sh\nprintf "%s\\n" "$@" > "$RAKAZO_TEST_ARGS"\n');
+      chmodSync(chromium, 0o755);
 
-    const prefsDir = path.join(home, ".browser-profiles/chromium/Default");
-    mkdirSync(prefsDir, { recursive: true });
-    const prefsPath = path.join(prefsDir, "Preferences");
-    writeFileSync(prefsPath, '{"profile":{"exit_type":"Crashed","exited_cleanly":false}}');
+      const profile = path.join(home, ".browser-profiles/chromium");
+      const prefsDir = path.join(profile, "Default");
+      mkdirSync(prefsDir, { recursive: true });
+      const prefsPath = path.join(prefsDir, "Preferences");
+      const localStatePath = path.join(profile, "Local State");
+      writeFileSync(
+        prefsPath,
+        '{\n  "profile": {\n    "exit_type": "Crashed",\n    "exited_cleanly": false\n  }\n}\n',
+      );
+      writeFileSync(
+        localStatePath,
+        '{\n  "profile": {\n    "exited_cleanly": false\n  }\n}\n',
+      );
 
-    try {
-      const result = spawnSync("bash", [path.join(root, "rakazo-browser")], {
-        env: {
-          ...process.env,
-          DISPLAY: ":1",
-          HOME: home,
-          PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
-        },
-        encoding: "utf8",
-      });
-      expect(result.status, result.error?.message ?? result.stderr).toBe(0);
+      try {
+        const result = spawnSync("bash", [path.join(root, "rakazo-browser")], {
+          env: {
+            ...process.env,
+            DISPLAY: ":1",
+            HOME: home,
+            PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
+            RAKAZO_TEST_ARGS: capture,
+          },
+          encoding: "utf8",
+        });
+        expect(result.status, result.error?.message ?? result.stderr).toBe(0);
 
-      const updatedPrefs = readFileSync(prefsPath, "utf8");
-      expect(updatedPrefs).toContain('"exit_type":"Normal"');
-      expect(updatedPrefs).toContain('"exited_cleanly":true');
-      expect(updatedPrefs).not.toContain('"exit_type":"Crashed"');
-      expect(updatedPrefs).not.toContain('"exited_cleanly":false');
-    } finally {
-      rmSync(temp, { recursive: true, force: true });
-    }
-  });
+        const flags = readFileSync(capture, "utf8");
+        expect(flags).toMatch(/--hide-crash-restore-bubble/);
+        expect(flags).toMatch(/--disable-session-crashed-bubble/);
+
+        const updatedPrefs = readFileSync(prefsPath, "utf8");
+        expect(updatedPrefs).toContain('"exit_type":"Normal"');
+        expect(updatedPrefs).toContain('"exited_cleanly":true');
+        expect(updatedPrefs).not.toContain("Crashed");
+        expect(updatedPrefs).not.toMatch(/"exited_cleanly"\s*:\s*false/);
+
+        const updatedLocalState = readFileSync(localStatePath, "utf8");
+        expect(updatedLocalState).toContain('"exited_cleanly":true');
+        expect(updatedLocalState).not.toMatch(/"exited_cleanly"\s*:\s*false/);
+      } finally {
+        rmSync(temp, { recursive: true, force: true });
+      }
+    },
+  );
 
   it("keeps container names stable so a bot can resume", () => {
     expect(containerNameFor("bot_1")).toBe("rakazo-bot-bot_1");

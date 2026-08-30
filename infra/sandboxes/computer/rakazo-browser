@@ -25,15 +25,22 @@ for arg in "$@"; do
   esac
 done
 
+clear_crash_state() {
+  f="$1"
+  [ -f "$f" ] || return 0
+  sed -E \
+    's/"exit_type"[[:space:]]*:[[:space:]]*"Crashed"/"exit_type":"Normal"/g; s/"exited_cleanly"[[:space:]]*:[[:space:]]*false/"exited_cleanly":true/g' \
+    "$f" > "${f}.tmp" && mv "${f}.tmp" "$f"
+}
+
 if [ -d "$ACTUAL_PROFILE" ]; then
-  # Silence errors with 2>/dev/null in case directory is unreadable or find fails
-  find "$ACTUAL_PROFILE" -name "Preferences" -type f 2>/dev/null | while read -r pref_file; do
-    sed 's/"exit_type":"Crashed"/"exit_type":"Normal"/g; s/"exited_cleanly":false/"exited_cleanly":true/g' "$pref_file" > "${pref_file}.tmp"
-    mv "${pref_file}.tmp" "$pref_file"
-  done
+  find "$ACTUAL_PROFILE" \( -name Preferences -o -name 'Local State' \) -type f 2>/dev/null |
+    while IFS= read -r f; do
+      clear_crash_state "$f" 2>/dev/null || rm -f "${f}.tmp"
+    done || true
 fi
 
-FLAGS="--test-type --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --no-first-run --no-default-browser-check --disable-session-crashed-bubble --password-store=basic --start-maximized"
+FLAGS="--test-type --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --no-first-run --no-default-browser-check --disable-session-crashed-bubble --hide-crash-restore-bubble --password-store=basic --start-maximized"
 if [ "$USER_DATA_DIR_SET" -eq 0 ]; then
   exec "$BIN" $FLAGS --user-data-dir="$PROFILE" "$@"
 fi
