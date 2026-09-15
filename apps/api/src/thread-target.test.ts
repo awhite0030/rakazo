@@ -948,6 +948,63 @@ function groupTarget() {
 }
 
 describe("sendThreadMessage", () => {
+  it("accepts a new bot message while a run is waiting for computer takeover", async () => {
+    const tx = {
+      thread: {
+        update: vi.fn().mockResolvedValue({ nextMessageSeq: 2 }),
+      },
+      message: {
+        create: vi.fn().mockResolvedValue({
+          id: "msg-1",
+          threadId: "thread-1",
+          seq: 1,
+          role: "user",
+          blocks: [{ kind: "text", text: "hi" }],
+          botId: null,
+          replyToMessageId: null,
+          runId: null,
+          createdAt: new Date(),
+        }),
+        update: vi.fn(),
+      },
+      run: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue([{ id: "run-waiting", taskId: "task-1", status: "waiting_takeover" }]),
+        findUnique: vi.fn().mockResolvedValue({ status: "waiting_takeover", startedAt: new Date() }),
+      },
+      steeringMessage: { create: vi.fn() },
+      event: { create: vi.fn().mockResolvedValue({ seq: 2 }) },
+      task: { create: vi.fn() },
+    };
+    const prisma = {
+      message: { findUnique: vi.fn().mockResolvedValue(null) },
+      $transaction: vi.fn(async (callback: (client: typeof tx) => unknown) => callback(tx)),
+    } as unknown as PrismaClient;
+    const actor = { spaceId: "workspace-1", userId: "user-1" } as Actor;
+    const target = {
+      kind: "bot",
+      botId: "bot-1",
+      threadId: "thread-1",
+      bot: { computer: null },
+    } as ThreadTarget;
+
+    await sendThreadMessage(
+      {
+        prisma,
+        events: { notify: vi.fn().mockResolvedValue(undefined) } as never,
+        jobs: { enqueue: vi.fn() } as never,
+      },
+      actor,
+      target,
+      {
+        text: "hi",
+        clientNonce: "nonce-1",
+      },
+    );
+    expect(tx.steeringMessage.create).toHaveBeenCalledWith({ data: { messageId: "msg-1", botId: "bot-1", userId: "user-1", runId: "run-waiting" } });
+  });
+
   it("rejects a new bot message while a run is waiting on input", async () => {
     const tx = {
       thread: {
