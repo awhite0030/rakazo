@@ -43,7 +43,7 @@ export async function listSpaceRuns(
     where: {
       spaceId: actor.spaceId,
       userId: actor.userId,
-      bot: { archivedAt: null, parentBotId: null },
+      bot: { archivedAt: null },
       ...(filter === "active"
         ? { status: { in: [...ACTIVE_RUN_STATUSES] } }
         : { status: { in: [...TERMINAL_STATUSES] } }),
