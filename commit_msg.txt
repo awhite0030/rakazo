@@ -1,0 +1,7 @@
+fix(api): include parentBotId in spaceNavigationDto bot objects
+
+Root cause: the previous PR attempt to implement bot parent groups didn't update the return type in the spaceNavigationDto response schema.
+Fix: Add parentBotId to the mapped bot objects being returned in spaceNavigationDto in apps/api/src/router.ts.
+Validation: pnpm check, pnpm lint, and pnpm test all pass.
+
+Fixes https://github.com/elie222/rakazo/issues/956
