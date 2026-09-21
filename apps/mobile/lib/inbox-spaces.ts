@@ -32,9 +32,7 @@ export function canDeleteInboxSpace(
 export function spaceInboxItems(spaces: InboxSpace[]): InboxSpaceItem[] {
   return spaces.flatMap((space): InboxSpaceItem[] => {
     const chats = [
-      ...space.bots
-        .filter((bot) => !bot.parentBotId)
-        .map((chat) => ({ type: "bot" as const, bot: chat, ...chat })),
+      ...space.bots.map((chat) => ({ type: "bot" as const, bot: chat, ...chat })),
       ...space.groups.map((chat) => ({ type: "group" as const, group: chat, ...chat })),
     ];
     const items: InboxSpaceItem[] = [];
