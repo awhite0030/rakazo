@@ -1380,8 +1380,10 @@ export function ShellPage() {
           : [];
     const showSpaceNames = sidebarSpaces.length > 1;
     return sidebarSpaces.flatMap((space) => {
-      const visibleBots = space.bots.filter((bot) =>
-        `${bot.name} ${bot.title ?? ""} ${bot.preview ?? ""}`.toLowerCase().includes(needle),
+      const visibleBots = space.bots.filter(
+        (bot) =>
+          !bot.parentBotId &&
+          `${bot.name} ${bot.title ?? ""} ${bot.preview ?? ""}`.toLowerCase().includes(needle),
       );
       const visibleGroups = space.groups.filter((group) =>
         `${group.name} ${group.preview}`.toLowerCase().includes(needle),
