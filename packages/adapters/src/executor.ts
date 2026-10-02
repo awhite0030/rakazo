@@ -2791,7 +2791,8 @@ export function createRunExecutor(deps: ExecutorDeps) {
             if (graphical) {
               const guardResult = isProtectedComputerLifecycleCommand(command);
               if (guardResult) {
-                const prefix = "This command was not run: the desktop-protection guard detected a protected command or shell syntax it cannot inspect";
+                const prefix =
+                  "This command was not run: the desktop-protection guard detected a protected command or shell syntax it cannot inspect";
                 const reason = typeof guardResult === "string" ? ` (${guardResult})` : "";
                 return finish({
                   error: `${prefix}${reason}. Shell access is still available. For ordinary repository work, use direct commands with explicit paths, without sourcing or command substitution. Do not stop or restart browser/desktop processes.`,

@@ -44,10 +44,14 @@ describe("computer lifecycle command guard", () => {
     expect(isProtectedComputerLifecycleCommand("ls ~/workspace  # check output")).toBe(false);
 
     // Variables, Subshells, Quoted Heredocs, Loops
-    expect(isProtectedComputerLifecycleCommand("dir=/home/rakazo/workspace/app; ls \"$dir\"")).toBe(false);
+    expect(isProtectedComputerLifecycleCommand('dir=/home/rakazo/workspace/app; ls "$dir"')).toBe(
+      false,
+    );
     expect(isProtectedComputerLifecycleCommand("( cd app && npm test )")).toBe(false);
-    expect(isProtectedComputerLifecycleCommand("for f in *.log; do wc -l \"$f\"; done")).toBe(false);
-    expect(isProtectedComputerLifecycleCommand("cat > notes.md <<'EOF'\nhello $(date)\nEOF")).toBe(false);
+    expect(isProtectedComputerLifecycleCommand('for f in *.log; do wc -l "$f"; done')).toBe(false);
+    expect(isProtectedComputerLifecycleCommand("cat > notes.md <<'EOF'\nhello $(date)\nEOF")).toBe(
+      false,
+    );
   });
 
   it.each([
