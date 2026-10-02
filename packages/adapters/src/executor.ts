@@ -461,29 +461,70 @@ function preserveShellCommandBoundaries(command: string): string {
     }
     if (character === quote) quote = undefined;
     else if (!quote && (character === "'" || character === '"')) quote = character;
+    else if (!quote && character === "#") {
+      // Strip unquoted comment to end of line
+      const nextNewline = command.indexOf("\n", index);
+      if (nextNewline === -1) break;
+      index = nextNewline - 1;
+      continue;
+    }
     result += character === "\n" && !quote ? "\n;" : character;
   }
   return result;
 }
 
-function tokenizeProtectedShellCommand(command: string): string[] | "dynamic" {
+function getQuotedHeredocs(command: string): Set<string> {
+  const identifiers = new Set<string>();
+  const regex = /<<(-?)\s*(['"])(.*?)\2/g;
+  for (const match of command.matchAll(regex)) {
+    if (match[3]) identifiers.add(match[3]);
+  }
+  return identifiers;
+}
+
+function tokenizeProtectedShellCommand(command: string): string[] | { dynamicReason: string } {
   try {
     // shell-quote treats newlines as whitespace. Preserve command boundaries for
     // the dot builtin, after folding shell line continuations. Retaining the
     // newline also preserves comment handling (comments remain fail-closed).
     const separated = preserveShellCommandBoundaries(command);
+    const quotedHeredocs = getQuotedHeredocs(command);
+
     const parsed = parseShellCommand<{ expansion: string }>(
       separated,
       (name) => STATIC_SHELL_EXPANSIONS[name] ?? { expansion: name },
       { splitUnquoted: true },
     );
+
+    const localVars = new Set<string>();
+    for (let i = 0; i < parsed.length; i++) {
+      const entry = parsed[i];
+      if (typeof entry === "string") {
+        if (/^[a-zA-Z_][a-zA-Z0-9_]*=/.test(entry)) {
+          localVars.add(entry.split("=")[0] as string);
+        }
+        if (entry === "for" && typeof parsed[i + 1] === "string") {
+          localVars.add(parsed[i + 1] as string);
+        }
+      }
+    }
+
     const words: string[] = [];
     let commandPosition = true;
     let redirectTarget = false;
+    let inQuotedHeredoc: string | null = null;
+
     for (const [index, entry] of parsed.entries()) {
+      if (inQuotedHeredoc) {
+        if (typeof entry === "string" && entry === inQuotedHeredoc) {
+          inQuotedHeredoc = null;
+        }
+        continue;
+      }
+
       if (typeof entry === "string") {
         // Backtick fragments are not fully tokenized; treat them as dynamic.
-        if (entry.includes("`")) return "dynamic";
+        if (entry.includes("`")) return { dynamicReason: "command substitution" };
         const word = entry.toLowerCase();
         // `find .`, `git add .`, and `git -C .` use a path, not the
         // executable `. script` builtin. Keep the path out of the builtin scan.
@@ -501,12 +542,16 @@ function tokenizeProtectedShellCommand(command: string): string[] | "dynamic" {
           /^[<>]/.test(next.op)
         ) {
           // A leading file descriptor belongs to a redirect, not the command.
-        } else if (commandPosition && /^(?:then|do|else)$/.test(word)) {
+        } else if (
+          commandPosition &&
+          /^(?:then|do|else|for|in|done|if|elif|fi|while|until)$/.test(word)
+        ) {
           commandPosition = true;
-        } else if (commandPosition && (word === "coproc" || word === "function")) return "dynamic";
+        } else if (commandPosition && (word === "coproc" || word === "function"))
+          return { dynamicReason: "dynamic" };
         else if (
           commandPosition &&
-          (/^(?:command|builtin|exec|time|if|elif|while|until|!|\{)$/.test(word) ||
+          (/^(?:command|builtin|exec|time|!|\{)$/.test(word) ||
             word.startsWith("-") ||
             /^[a-z_][a-z0-9_]*=/.test(word))
         ) {
@@ -517,30 +562,54 @@ function tokenizeProtectedShellCommand(command: string): string[] | "dynamic" {
       if ("expansion" in entry) {
         // Unknown expansions and command substitutions are resolved by bash
         // after this guard runs, so their eventual value cannot be inspected.
-        return "dynamic";
-      }
-      if ("op" in entry && entry.op === "glob") {
+        if (
+          entry.expansion === "" ||
+          (entry.expansion !== undefined && localVars.has(entry.expansion))
+        ) {
+          // Local variables assigned in same command and handled safe expansions are okay
+        } else {
+          return { dynamicReason: `unresolved variable $${entry.expansion}` };
+        }
+      } else if ("op" in entry && entry.op === "glob") {
         words.push(entry.pattern.toLowerCase());
-        continue;
-      }
-      if ("op" in entry && SAFE_SHELL_CONTROL_OPS.has(entry.op)) {
+      } else if ("op" in entry && SAFE_SHELL_CONTROL_OPS.has(entry.op)) {
         if (["&&", "||", ";", "|", "&"].includes(entry.op)) {
           commandPosition = true;
           redirectTarget = false;
-        } else redirectTarget = true;
-        continue;
+        } else if (
+          entry.op === "<" &&
+          parsed[index + 1] &&
+          typeof parsed[index + 1] === "object" &&
+          "op" in (parsed[index + 1] as any) &&
+          (parsed[index + 1] as any).op === "<"
+        ) {
+          const eofEntry = parsed[index + 2];
+          if (typeof eofEntry === "string") {
+            const eofWord = eofEntry.replace(/^-/, "");
+            if (quotedHeredocs.has(eofWord)) {
+              inQuotedHeredoc = eofWord;
+            } else {
+              return { dynamicReason: "unquoted heredoc" };
+            }
+          }
+        } else {
+          redirectTarget = true;
+        }
+      } else if ("op" in entry && (entry.op === "(" || entry.op === ")")) {
+        commandPosition = true;
+      } else {
+        return { dynamicReason: `unhandled syntax ${(entry as any).op}` };
       }
-      return "dynamic";
     }
     return words;
   } catch {
-    return "dynamic";
+    return { dynamicReason: "parse error" };
   }
 }
 
-export function isProtectedComputerLifecycleCommand(command: string): boolean {
+export function isProtectedComputerLifecycleCommand(command: string): boolean | string {
   const words = tokenizeProtectedShellCommand(command);
-  if (words === "dynamic") return true;
+  if (!Array.isArray(words)) return words.dynamicReason;
 
   const commandNames = words.map((word) => word.split("/").at(-1));
   if (commandNames.some((word) => /^(?:kill|pkill|killall|xkill)$/.test(word ?? ""))) {
@@ -569,7 +638,10 @@ export function isProtectedComputerLifecycleCommand(command: string): boolean {
     const name = words[index]?.split("/").at(-1) ?? "";
     if (!SHELL_INTERPRETER_NAMES.test(name)) continue;
     const program = shellCFlagProgram(words, index);
-    if (program && isProtectedComputerLifecycleCommand(program)) return true;
+    if (program) {
+      const nested = isProtectedComputerLifecycleCommand(program);
+      if (nested) return nested;
+    }
   }
   return false;
 }
@@ -2716,11 +2788,15 @@ export function createRunExecutor(deps: ExecutorDeps) {
           }
           if (name === "shell") {
             const command = String(args.command ?? args.cmd ?? "");
-            if (graphical && isProtectedComputerLifecycleCommand(command)) {
-              return finish({
-                error:
-                  "This command was not run: the desktop-protection guard detected a protected command or shell syntax it cannot inspect. Shell access is still available. For ordinary repository work, use direct commands with explicit paths, without sourcing or command substitution. Do not stop or restart browser/desktop processes.",
-              });
+            if (graphical) {
+              const guardResult = isProtectedComputerLifecycleCommand(command);
+              if (guardResult) {
+                const prefix = "This command was not run: the desktop-protection guard detected a protected command or shell syntax it cannot inspect";
+                const reason = typeof guardResult === "string" ? ` (${guardResult})` : "";
+                return finish({
+                  error: `${prefix}${reason}. Shell access is still available. For ordinary repository work, use direct commands with explicit paths, without sourcing or command substitution. Do not stop or restart browser/desktop processes.`,
+                });
+              }
             }
             const cwd = resolveBotWorkspaceCwd(
               computerMode,
