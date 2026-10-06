@@ -48,6 +48,7 @@
   const PULL_SCALE_BYTES = 1.2e9;
 
   let defaultLocalUrl = "";
+  let isReopened = false;
   let stackPolling = false;
   let lastStack = null;
   let lastProgress = 0;
@@ -303,7 +304,7 @@
   });
 
   quitButton.addEventListener("click", () => {
-    if (bridge === undefined) {
+    if (bridge === undefined || isReopened) {
       window.close();
       return;
     }
@@ -341,6 +342,12 @@
       const state = await bridge.state();
       if (state === null) throw new Error("Setup is not active");
       defaultLocalUrl = state.defaultLocalUrl;
+      isReopened = state.isReopened === true;
+      if (isReopened) {
+        document.querySelector(".heading").textContent = "Server settings";
+        quitButton.textContent = "Cancel";
+        quitButton.title = "Cancel";
+      }
       if (state.saved !== null) {
         const modeInput = document.querySelector(`input[name="mode"][value="${state.saved.mode}"]`);
         if (modeInput !== null) modeInput.checked = true;
