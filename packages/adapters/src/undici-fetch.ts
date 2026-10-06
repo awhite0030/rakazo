@@ -13,11 +13,22 @@ import { fetch as undiciFetch } from "undici";
  * "[object FormData]". Serialize it with the implementation that created it so
  * the multipart fields and Content-Type boundary stay paired. Other bodies are
  * passed through unchanged. */
-export const dispatcherFetch = (async (input: RequestInfo | URL, init?: RequestInit) =>
-  undiciFetch(
+export const dispatcherFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  const response = await undiciFetch(
     input as Parameters<typeof undiciFetch>[0],
     (await initForPackageFetch(init)) as Parameters<typeof undiciFetch>[1],
-  )) as unknown as typeof globalThis.fetch;
+  );
+  if (response instanceof globalThis.Response) return response;
+  const headers = new globalThis.Headers();
+  response.headers.forEach((value, key) => headers.append(key, value));
+  const globalResponse = new globalThis.Response(response.body as BodyInit | null | undefined, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+  Object.defineProperty(globalResponse, "url", { get: () => response.url });
+  return globalResponse;
+}) as unknown as typeof globalThis.fetch;
 
 /** Node's fetch as this module loaded it. A later replacement of
  * `globalThis.fetch` is a different function; the original is still paired
