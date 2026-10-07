@@ -133,10 +133,7 @@ export function IntegrationSetup({
         {serverSetup ? t`Server integrations` : t`Add MCP server`}
       </h1>
       {serverSetup ? (
-        <fieldset
-          aria-label={t`Integration options`}
-          className="overflow-hidden rounded-xl border border-border"
-        >
+        <fieldset aria-label={t`Integration options`} className="grid grid-cols-2 gap-4">
           {choices
             .filter(({ id }) => !managedOnly || id === "composio" || id === "pipedream")
             .map(({ id, label }) => (
@@ -150,10 +147,9 @@ export function IntegrationSetup({
                   setApiKey("");
                   setError(null);
                 }}
-                className={`flex min-h-11 w-full items-center justify-between border-b border-border px-3.5 py-2.5 text-left last:border-0 ${choice === id ? "bg-muted" : "hover:bg-accent"}`}
+                className={`flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors ${choice === id ? "border-primary bg-primary/5" : "border-border hover:border-foreground/20 bg-card"}`}
               >
-                <span>{label}</span>
-                {choice === id ? <Check className="size-4" aria-hidden /> : null}
+                <span className="font-medium text-foreground">{label}</span>
               </button>
             ))}
         </fieldset>
@@ -274,9 +270,9 @@ export function IntegrationSetup({
               <Trans>No remote MCP servers found</Trans>
             </p>
           ) : null}
-          <details className="text-sm text-muted-foreground">
-            <summary className="cursor-pointer">
-              <Trans>Add server URL</Trans>
+          <details className="mt-4 text-sm text-muted-foreground group">
+            <summary className="cursor-pointer font-medium text-foreground hover:underline">
+              <Trans>Add a direct server URL instead</Trans>
             </summary>
             <div className="mt-3 space-y-3">
               <Input

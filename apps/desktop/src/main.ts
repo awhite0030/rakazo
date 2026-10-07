@@ -1188,6 +1188,7 @@ app.whenReady().then(async () => {
       defaultLocalUrl: localStack.webUrl(),
       saved: currentSetup,
       error: setupError ?? undefined,
+      isReopened: currentTargetUrl !== null,
     };
   });
 
