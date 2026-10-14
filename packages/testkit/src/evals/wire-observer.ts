@@ -148,7 +148,6 @@ export function installDiagnosticWireObserver(
 ) {
   const prior = globalThis.fetch;
   const wrapped = diagnosticWireFetch(prior, modelId, observations);
-  (wrapped as any)[Symbol.for("rakazo.diagnosticWireFetch")] = true;
   globalThis.fetch = wrapped;
   return () => {
     if (globalThis.fetch === wrapped) globalThis.fetch = prior;

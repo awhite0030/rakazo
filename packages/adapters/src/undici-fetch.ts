@@ -102,8 +102,7 @@ export function fetchPairedWithDispatcher(
     baseFetch == null ||
     baseFetch === nodeFetch ||
     baseFetch === globalThis.fetch ||
-    baseFetch === dispatcherFetch ||
-    (baseFetch as any)?.[Symbol.for("rakazo.diagnosticWireFetch")]
+    baseFetch === dispatcherFetch
   ) {
     return dispatcherFetch;
   }
