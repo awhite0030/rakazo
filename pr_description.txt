@@ -1,0 +1,4 @@
+Root cause: Users on immutable distributions like Fedora Silverblue without FUSE2 cannot run the AppImage, and the desktop stack does not detect Podman as an alternative to Docker.
+Fix: Add a `tar.gz` archive to the Linux electron-builder target alongside AppImage to allow users to extract and run the app directly, and update `docker-cli` and `local-stack` to also look for and use Podman if Docker is not found.
+Validation: Ran `export npm_config_engine_strict=false && pnpm check`, `pnpm lint`, and `pnpm test`. All tests and checks passed.
+Fixes https://github.com/elie222/rakazo/issues/1414
