@@ -74,7 +74,8 @@
       "executableName": "rakazo",
       "icon": "assets/icon.png",
       "target": [
-        "AppImage"
+        "AppImage",
+        "tar.gz"
       ]
     },
     "publish": [

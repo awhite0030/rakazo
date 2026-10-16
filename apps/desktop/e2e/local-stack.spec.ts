@@ -226,7 +226,7 @@ test("without Docker the app explains how to get it and offers to check again", 
 
   await setup.getByRole("button", { name: "Continue" }).click();
   await expect(setup.locator("#stack-phase")).toHaveText(
-    "Docker is not installed on this computer.",
+    "Docker (or Podman) is not installed on this computer.",
   );
   await expect(setup.locator("#stack-phase")).toHaveAttribute("data-tone", "error");
   await expect(setup.getByRole("button", { name: "Docker Desktop" })).toBeVisible();

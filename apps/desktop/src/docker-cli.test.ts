@@ -35,6 +35,8 @@ describe("dockerBinaryCandidates", () => {
       "/Applications/Docker.app/Contents/Resources/bin/docker",
       "/Users/me/.orbstack/bin/docker",
       "/usr/bin/docker",
+      "/usr/bin/podman",
+      "/usr/local/bin/podman",
     ]);
   });
 
@@ -46,7 +48,9 @@ describe("dockerBinaryCandidates", () => {
     expect(candidates).toEqual([
       "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe",
       "C:\\Windows\\system32\\docker.exe",
+      "C:\\Windows\\system32\\podman.exe",
       "C:\\tools\\docker.exe",
+      "C:\\tools\\podman.exe",
     ]);
   });
 
@@ -55,6 +59,8 @@ describe("dockerBinaryCandidates", () => {
       "/usr/bin/docker",
       "/usr/local/bin/docker",
       "/snap/bin/docker",
+      "/snap/bin/podman",
+      "/usr/bin/podman",
     ]);
   });
 });
@@ -130,6 +136,7 @@ describe("classifyDockerFailure", () => {
     ],
     ["permission denied while trying to connect to the Docker daemon socket", "socket-permission"],
     ["docker: 'compose' is not a docker command.", "compose-missing"],
+    ["podman: 'compose' is not a podman command.", "compose-missing"],
     ["Error response from daemon: manifest unknown", "image-not-found"],
     ["pull access denied for ghcr.io/x/y, repository does not exist", "image-not-found"],
     ["Get https://ghcr.io/v2/: dial tcp: lookup ghcr.io: no such host", "network"],

@@ -430,7 +430,10 @@ export class LocalStackController {
 
     const binary = resolveDockerBinary(this.deps.platform, this.deps.env, this.deps.exists);
     if (binary === null) {
-      this.push({ type: "docker-missing", message: "Docker is not installed on this computer." });
+      this.push({
+        type: "docker-missing",
+        message: "Docker (or Podman) is not installed on this computer.",
+      });
       return;
     }
     const version = await this.docker(
@@ -445,7 +448,7 @@ export class LocalStackController {
       this.push({
         type: "docker-missing",
         message:
-          "Docker is installed, but Docker Compose is missing. Install Docker Desktop or the docker-compose-plugin.",
+          "Docker (or Podman) is installed, but Compose is missing. Install Docker Desktop or the docker-compose-plugin (or podman-compose).",
       });
       return;
     }
@@ -462,7 +465,7 @@ export class LocalStackController {
         message:
           failureKind(info) === "socket-permission"
             ? DOCKER_GROUP_HINT
-            : "Docker is installed but not running. Start Docker, then check again.",
+            : "Docker (or Podman) is installed but not running. Start it, then check again.",
       });
       return;
     }
