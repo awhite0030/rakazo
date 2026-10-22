@@ -241,11 +241,11 @@ describe("reduceStackState", () => {
   it("records why Docker is unavailable", () => {
     const state = reduceStackState(reduceStackState(start, { type: "check-start" }), {
       type: "docker-missing",
-      message: "Docker is not installed on this computer.",
+      message: "Docker (or Podman) is not installed on this computer.",
     });
     expect(state).toMatchObject({
       phase: "docker-missing",
-      message: "Docker is not installed on this computer.",
+      message: "Docker (or Podman) is not installed on this computer.",
     });
   });
 });
@@ -515,7 +515,7 @@ describe("LocalStackController", () => {
     const state = await stack.start();
     expect(state).toMatchObject({
       phase: "docker-missing",
-      message: "Docker is not installed on this computer.",
+      message: "Docker (or Podman) is not installed on this computer.",
     });
     expect(calls).toEqual([]);
     await expect(stat(path.join(root, "stack", STACK_ENV_FILE))).rejects.toThrow();
@@ -529,7 +529,7 @@ describe("LocalStackController", () => {
     );
     const state = await stack.start();
     expect(state.phase).toBe("docker-missing");
-    expect(state.message).toContain("Docker Compose is missing");
+    expect(state.message).toContain("Compose is missing");
     expect(calls).toHaveLength(1);
   });
 
@@ -542,7 +542,7 @@ describe("LocalStackController", () => {
     const state = await stack.start();
     expect(state).toMatchObject({
       phase: "docker-not-running",
-      message: "Docker is installed but not running. Start Docker, then check again.",
+      message: "Docker (or Podman) is installed but not running. Start it, then check again.",
     });
     expect(calls).toHaveLength(2);
   });

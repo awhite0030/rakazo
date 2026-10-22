@@ -42,10 +42,12 @@ function dockerInstallDirectories(platform: string, env: NodeJS.ProcessEnv): str
 /** GUI launches on macOS get a minimal PATH, so check known install locations first. */
 export function dockerBinaryCandidates(platform: string, env: NodeJS.ProcessEnv): string[] {
   const binary = platform === "win32" ? "docker.exe" : "docker";
+  const podman = platform === "win32" ? "podman.exe" : "podman";
   const joiner = platform === "win32" ? path.win32 : path.posix;
   const candidates = dockerInstallDirectories(platform, env).map((dir) => joiner.join(dir, binary));
   for (const entry of (env.PATH ?? "").split(platform === "win32" ? ";" : ":")) {
-    if (entry.trim() !== "") candidates.push(joiner.join(entry, binary));
+    if (entry.trim() !== "")
+      candidates.push(joiner.join(entry, binary), joiner.join(entry, podman));
   }
   return [...new Set(candidates)];
 }
@@ -260,7 +262,12 @@ const SOCKET_PERMISSION = [
   "got permission denied",
   "connect: permission denied",
 ];
-const COMPOSE_MISSING = ["'compose' is not a docker command", "unknown command: docker compose"];
+const COMPOSE_MISSING = [
+  "'compose' is not a docker command",
+  "unknown command: docker compose",
+  "'compose' is not a podman command",
+  "unknown command: podman compose",
+];
 const IMAGE_NOT_FOUND = [
   "manifest unknown",
   "pull access denied",
