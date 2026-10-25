@@ -26,6 +26,10 @@
         "buildType": "apk"
       },
       "environment": "production"
+    },
+    "diagnostic": {
+      "extends": "production",
+      "channel": "diagnostic"
     }
   },
   "submit": {

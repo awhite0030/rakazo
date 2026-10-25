@@ -15,6 +15,7 @@ import type {
   ModelContextLimits,
   ModelOAuthBegin,
   ModelOAuthSignInMode,
+  SettingsScope,
   ThinkingLevel,
 } from "@rakazo/contracts";
 import {
@@ -45,7 +46,7 @@ export const SUBSCRIPTION_SIGN_IN_PROVIDERS: Record<
 > = {
   [CHATGPT_OAUTH_PROVIDER]: {
     mode: "device-code",
-    loginLabel: "Sign in with ChatGPT Plus/Pro",
+    loginLabel: "Sign in with ChatGPT",
     hint: "ChatGPT Plus/Pro",
     billing:
       "Sign in with ChatGPT Plus or Pro. Uses your OpenAI subscription. Rakazo does not pay.",
@@ -64,7 +65,7 @@ export const SUBSCRIPTION_SIGN_IN_PROVIDERS: Record<
   },
   [ANTHROPIC_OAUTH_PROVIDER]: {
     mode: "auth-url",
-    loginLabel: "Sign in with Claude Pro/Max",
+    loginLabel: "Sign in with Claude",
     hint: "Claude Pro/Max / key",
     // Button + "Or paste an API key" already explain the choices; no extra paragraph.
     billing: "",
@@ -230,6 +231,23 @@ export function oauthCredentialAccountId(credential: OAuthCredential): string | 
   return nonBlankString(claims?.chatgpt_account_id) ?? nonBlankString(payload.chatgpt_account_id);
 }
 
+/**
+ * The email an OAuth credential's access token names, for telling two signed-in accounts
+ * apart. Read from the stored token only; never logged.
+ */
+export function oauthCredentialEmail(credential: OAuthCredential): string | undefined {
+  const payload = decodeJwtPayload(credential.access);
+  if (!payload) return undefined;
+  const profile = payload["https://api.openai.com/profile"];
+  const email =
+    nonBlankString(
+      profile && typeof profile === "object"
+        ? (profile as Record<string, unknown>).email
+        : undefined,
+    ) ?? nonBlankString(payload.email);
+  return email?.includes("@") ? email.trim() : undefined;
+}
+
 const retiredCredentialErrors = new WeakSet<object>();
 
 /**
@@ -293,8 +311,13 @@ export type PiOAuthConnected = {
   status: "connected";
   credential: OAuthCredential;
   provider: string;
+  /** The connection this sign-in renews; null adds one; undefined is an older app's sign-in. */
+  credentialId?: string | null;
   modelId?: string;
   thinkingLevel?: string | null;
+  makeDefault?: boolean;
+  /** Which copy of the member's models makeDefault sets; omitted means the one that applies. */
+  settingsScope?: SettingsScope;
   label?: string;
   signal: AbortSignal;
 };
@@ -318,6 +341,7 @@ type LoginFn = (
   providerId: string,
   type: "oauth",
   interaction: AuthInteraction,
+  options?: { codePage?: boolean },
 ) => Promise<Credential>;
 
 type SessionState = "pending" | "ready" | "finalizing" | "consumed";
@@ -328,8 +352,11 @@ type Session = {
   userId: string;
   spaceId: string;
   provider: string;
+  credentialId?: string | null;
   modelId?: string;
   thinkingLevel?: string | null;
+  makeDefault?: boolean;
+  settingsScope?: SettingsScope;
   label?: string;
   abort: AbortController;
   state: SessionState;
@@ -840,9 +867,14 @@ export class PiOAuthLogins {
     userId: string;
     spaceId: string;
     provider: string;
+    credentialId?: string | null;
     modelId?: string;
     thinkingLevel?: string | null;
+    makeDefault?: boolean;
+    settingsScope?: SettingsScope;
     label?: string;
+    /** The client has no loopback listener, so the provider shows the code to paste. */
+    codePage?: boolean;
     signal?: AbortSignal;
   }): Promise<PiOAuthBegin> {
     if (!SUBSCRIPTION_SIGN_IN_PROVIDERS[input.provider]) {
@@ -854,7 +886,7 @@ export class PiOAuthLogins {
       throw input.signal.reason ?? new Error("Sign-in cancelled.");
     }
 
-    const scope = oauthScopeKey(input.userId, input.spaceId, input.provider);
+    const scope = oauthScopeKey(input.userId, input.spaceId, input.provider, input.credentialId);
     const lockKey = oauthProviderKey(input.userId, input.provider);
     const prepared = await this.withReplacementLock(lockKey, input.signal, async () => {
       await this.retireActiveSession(scope, input.signal);
@@ -869,8 +901,11 @@ export class PiOAuthLogins {
         userId: input.userId,
         spaceId: input.spaceId,
         provider: input.provider,
+        credentialId: input.credentialId,
         modelId: input.modelId,
         thinkingLevel: input.thinkingLevel,
+        makeDefault: input.makeDefault,
+        settingsScope: input.settingsScope,
         label: input.label,
         abort,
         state: "pending",
@@ -878,68 +913,73 @@ export class PiOAuthLogins {
 
       const signInStarted = deferred<PiOAuthStarted>();
 
-      const done = this.loginFn(input.provider, "oauth", {
-        signal: abort.signal,
-        async prompt(prompt) {
-          if (prompt.type === "select") {
-            const option = prompt.options.find((entry) => entry.id === "device_code");
-            if (!option) {
-              throw new Error("Device-code sign-in is not available for this provider.");
-            }
-            return option.id;
-          }
-          if (prompt.type === "manual_code") {
-            return new Promise<string>((resolve, reject) => {
-              const signals = [abort.signal, prompt.signal].filter(
-                (signal): signal is AbortSignal => signal !== undefined,
-              );
-              const removeAbortListeners = () => {
-                for (const signal of signals) signal.removeEventListener("abort", onAbort);
-              };
-              const onAbort = (event: Event) => {
-                removeAbortListeners();
-                session.submitCode = undefined;
-                const signal = event.currentTarget as AbortSignal;
-                reject(signal.reason ?? new Error("Sign-in cancelled."));
-              };
-              session.submitCode = (code) => {
-                removeAbortListeners();
-                session.submitCode = undefined;
-                resolve(code);
-              };
-              const aborted = signals.find((signal) => signal.aborted);
-              if (aborted) {
-                removeAbortListeners();
-                session.submitCode = undefined;
-                reject(aborted.reason ?? new Error("Sign-in cancelled."));
-              } else {
-                for (const signal of signals)
-                  signal.addEventListener("abort", onAbort, { once: true });
+      const done = this.loginFn(
+        input.provider,
+        "oauth",
+        {
+          signal: abort.signal,
+          async prompt(prompt) {
+            if (prompt.type === "select") {
+              const option = prompt.options.find((entry) => entry.id === "device_code");
+              if (!option) {
+                throw new Error("Device-code sign-in is not available for this provider.");
               }
-            });
-          }
-          // Copilot asks for a GitHub Enterprise host first. Blank is github.com.
-          if (prompt.type === "text") return "";
-          throw new Error("Unexpected subscription login prompt.");
+              return option.id;
+            }
+            if (prompt.type === "manual_code") {
+              return new Promise<string>((resolve, reject) => {
+                const signals = [abort.signal, prompt.signal].filter(
+                  (signal): signal is AbortSignal => signal !== undefined,
+                );
+                const removeAbortListeners = () => {
+                  for (const signal of signals) signal.removeEventListener("abort", onAbort);
+                };
+                const onAbort = (event: Event) => {
+                  removeAbortListeners();
+                  session.submitCode = undefined;
+                  const signal = event.currentTarget as AbortSignal;
+                  reject(signal.reason ?? new Error("Sign-in cancelled."));
+                };
+                session.submitCode = (code) => {
+                  removeAbortListeners();
+                  session.submitCode = undefined;
+                  resolve(code);
+                };
+                const aborted = signals.find((signal) => signal.aborted);
+                if (aborted) {
+                  removeAbortListeners();
+                  session.submitCode = undefined;
+                  reject(aborted.reason ?? new Error("Sign-in cancelled."));
+                } else {
+                  for (const signal of signals)
+                    signal.addEventListener("abort", onAbort, { once: true });
+                }
+              });
+            }
+            // Copilot asks for a GitHub Enterprise host first. Blank is github.com.
+            if (prompt.type === "text") return "";
+            throw new Error("Unexpected subscription login prompt.");
+          },
+          notify(event) {
+            if (event.type === "device_code") {
+              signInStarted.resolve({
+                mode: "device-code",
+                userCode: event.userCode,
+                verificationUri: httpsAuthorizationUrl(event.verificationUri),
+                expiresInSeconds: event.expiresInSeconds ?? 15 * 60,
+              });
+            }
+            if (event.type === "auth_url") {
+              signInStarted.resolve({
+                mode: "auth-url",
+                verificationUri: httpsAuthorizationUrl(event.url),
+                expiresInSeconds: 15 * 60,
+              });
+            }
+          },
         },
-        notify(event) {
-          if (event.type === "device_code") {
-            signInStarted.resolve({
-              mode: "device-code",
-              userCode: event.userCode,
-              verificationUri: httpsAuthorizationUrl(event.verificationUri),
-              expiresInSeconds: event.expiresInSeconds ?? 15 * 60,
-            });
-          }
-          if (event.type === "auth_url") {
-            signInStarted.resolve({
-              mode: "auth-url",
-              verificationUri: httpsAuthorizationUrl(event.url),
-              expiresInSeconds: 15 * 60,
-            });
-          }
-        },
-      })
+        { codePage: input.codePage },
+      )
         .then((credential) => {
           if (!isOAuthCredential(credential)) {
             throw new Error("Subscription sign-in did not return an OAuth credential.");
@@ -1044,8 +1084,11 @@ export class PiOAuthLogins {
         status: "connected",
         credential: session.credential,
         provider: session.provider,
+        credentialId: session.credentialId,
         modelId: session.modelId,
         thinkingLevel: session.thinkingLevel,
+        makeDefault: session.makeDefault,
+        settingsScope: session.settingsScope,
         label: session.label,
         signal: session.abort.signal,
       };
@@ -1162,8 +1205,14 @@ export class PiOAuthLogins {
 
   /** Retire every sign-in this user started for one provider, in any space —
    *  disconnect removes the account credential, so no space's session may
-   *  finish afterward. The shared provider lock orders this against begin. */
-  async cancelProvider(input: { userId: string; provider: string }): Promise<void> {
+   *  finish afterward. With `credentialId`, only sign-ins that may renew that
+   *  connection are retired; a sign-in adding another account carries on. The shared provider
+   *  lock orders this against begin. */
+  async cancelProvider(input: {
+    userId: string;
+    provider: string;
+    credentialId?: string;
+  }): Promise<void> {
     await this.withReplacementLock(
       oauthProviderKey(input.userId, input.provider),
       undefined,
@@ -1172,7 +1221,13 @@ export class PiOAuthLogins {
           ...new Set(
             [...this.pending.values()]
               .filter(
-                (session) => session.userId === input.userId && session.provider === input.provider,
+                (session) =>
+                  session.userId === input.userId &&
+                  session.provider === input.provider &&
+                  (!input.credentialId ||
+                    session.credentialId === input.credentialId ||
+                    // A sign-in that never named its connection may renew this one.
+                    session.credentialId === undefined),
               )
               .map((session) => session.scope),
           ),
@@ -1207,9 +1262,10 @@ function defaultLogin(
   providerId: string,
   type: "oauth",
   interaction: AuthInteraction,
+  options: { codePage?: boolean } = {},
 ): Promise<Credential> {
   if (providerId === ANTHROPIC_OAUTH_PROVIDER) {
-    return createManualAnthropicOAuthLogin()(interaction);
+    return createManualAnthropicOAuthLogin({ codePage: options.codePage })(interaction);
   }
   return builtinModels().login(providerId, type, interaction);
 }
@@ -1228,8 +1284,14 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function oauthScopeKey(userId: string, spaceId: string, provider: string): string {
-  return JSON.stringify([userId, spaceId, provider]);
+/** A new sign-in replaces a pending one for the same connection, or for a new connection. */
+function oauthScopeKey(
+  userId: string,
+  spaceId: string,
+  provider: string,
+  credentialId?: string | null,
+): string {
+  return JSON.stringify([userId, spaceId, provider, credentialId ?? null]);
 }
 
 // Begins and disconnect cancellation share one lock per user+provider so a

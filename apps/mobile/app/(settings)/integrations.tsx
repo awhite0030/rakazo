@@ -4,6 +4,7 @@ import type {
   ConnectionCatalogItem,
   McpServer,
 } from "@rakazo/contracts";
+import { CONNECTION_LABEL_MAX_LENGTH } from "@rakazo/contracts";
 import {
   buildFeaturedConnectorTiles,
   CONNECTION_CATALOG_PAGE_SIZE,
@@ -46,6 +47,7 @@ import {
 } from "../../lib/integrations-cache";
 import { loadLastBotId } from "../../lib/last-bot";
 import { native, useThemedStyles } from "../../lib/native";
+import { useSideInsets } from "../../lib/side-insets";
 import { errorText } from "../../lib/user-error";
 
 type SourceKind = "treg" | "executor" | "mcp" | "api" | "graphql";
@@ -54,6 +56,7 @@ type ConnectionTool = { name: string; description: string };
 const LOGO_SIZE = 32;
 
 export default function Integrations() {
+  const sideInsets = useSideInsets();
   const styles = useThemedStyles(createIntegrationsStyles);
   const { t } = useI18n();
   const { width } = useWindowDimensions();
@@ -665,6 +668,7 @@ export default function Integrations() {
             <View key={row.id} style={styles.accountRow}>
               <TextInput
                 value={labelDrafts[row.id] ?? row.displayName}
+                maxLength={CONNECTION_LABEL_MAX_LENGTH}
                 onChangeText={(value) =>
                   setLabelDrafts((current) => ({ ...current, [row.id]: value }))
                 }
@@ -733,6 +737,7 @@ export default function Integrations() {
   return (
     <SafeAreaView edges={["bottom"]} style={styles.screen}>
       <ScrollView
+        style={sideInsets}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
@@ -1017,8 +1022,9 @@ export default function Integrations() {
                   <View key={source.id} style={styles.row}>
                     <View style={styles.grow}>
                       <Text style={styles.title}>{source.name}</Text>
+                      <Text style={styles.secondary}>{source.kind.toUpperCase()}</Text>
                       <Text numberOfLines={1} style={styles.secondary}>
-                        {source.kind.toUpperCase()} · {source.source}
+                        {source.source}
                       </Text>
                     </View>
                     <NativeActionButton

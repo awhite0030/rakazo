@@ -12,6 +12,7 @@ import {
   DesktopUpdateController,
   type ElectronAutoUpdater,
   LAUNCH_CHECK_DELAY_MS,
+  updaterSupport,
 } from "./auto-update.js";
 import { createBadgeHandler } from "./badge.js";
 import { openBrowserAuth } from "./browser-auth.js";
@@ -34,12 +35,14 @@ import {
   reportDesktopError,
 } from "./monitoring.js";
 import { oauthCallbackFrom } from "./oauth-callback.js";
+import { associatedPasskeyRpIds } from "./passkeys.js";
 import {
   bundledRendererCandidates,
   bundledRendererHeaders,
   forwardedRendererRequestInit,
   isRendererAssetMiss,
 } from "./renderer-assets.js";
+import { revealSecondInstanceWindow, secondInstanceWindow } from "./second-instance.js";
 import { installSessionPermissions } from "./session-permissions.js";
 import {
   DEFAULT_LOCAL_WEB_URL,
@@ -128,6 +131,15 @@ app.once("will-finish-launching", () => markOnce("rk:main:will-finish-launching"
 app.once("ready", () => markOnce("rk:main:ready"));
 // Includes fresh partitions and popup-created sessions, before they load remote content.
 app.on("session-created", (value) => installSessionPermissions(value, permissionTarget));
+
+const passkeyRpIds = associatedPasskeyRpIds({
+  platform: process.platform,
+  packaged: app.isPackaged,
+  resourcesPath: process.resourcesPath,
+  exists: existsSync,
+});
+// Routes WebAuthn to the system passkey sheet (iCloud Keychain and other providers).
+if (passkeyRpIds.length > 0) app.configureWebAuthn({ platformPasskeys: true });
 
 function permissionTarget() {
   if (mainWindow === null || mainWindow.isDestroyed()) return null;
@@ -533,7 +545,7 @@ function oauthPopupWindowOptions(partition: string | null) {
     frame: true,
     titleBarStyle: "default" as const,
     autoHideMenuBar: true,
-    backgroundColor: "#141414",
+    backgroundColor: "#161616",
     webPreferences: oauthPopupSessionPreferences(partition),
   };
 }
@@ -590,6 +602,66 @@ function restoreAppWindowAfterSetup() {
   mainWindow.focus();
 }
 
+let menuUpdateCheck: Promise<void> | null = null;
+
+/** Works before sign-in, unlike the settings section, and answers with native alerts. */
+function checkForUpdatesFromMenu() {
+  // One request at a time, so repeated clicks cannot stack alerts.
+  menuUpdateCheck ??= runMenuUpdateCheck().finally(() => {
+    menuUpdateCheck = null;
+  });
+  return menuUpdateCheck;
+}
+
+async function runMenuUpdateCheck() {
+  let state = await desktopUpdater.check(true);
+  // A found update starts downloading on its own; wait for it so the answer can be "restart".
+  if (state.phase === "available" || state.phase === "downloading") {
+    state = await desktopUpdater.download();
+  }
+  const alert = (options: Electron.MessageBoxOptions) =>
+    mainWindow && !mainWindow.isDestroyed()
+      ? dialog.showMessageBox(mainWindow, options)
+      : dialog.showMessageBox(options);
+  if (state.phase === "ready") {
+    const { response } = await alert({
+      message: `Rakazo ${state.availableVersion} is ready to install.`,
+      buttons: ["Restart", "Later"],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+    });
+    if (response !== 0) return;
+    const result = await installUpdate();
+    if (result.message) {
+      await alert({
+        type: "warning",
+        message: "Could not install the update.",
+        detail: result.message,
+      });
+    }
+  } else if (state.message) {
+    // Offline and other failed checks settle back to idle with a message.
+    await alert({
+      type: "warning",
+      message: "Could not check for updates.",
+      detail: state.message,
+    });
+  } else if (state.phase === "idle") {
+    await alert({ message: "Rakazo is up to date.", detail: `Version ${state.currentVersion}` });
+  }
+}
+
+async function installUpdate() {
+  if (desktopUpdater.state().phase !== "ready") return desktopUpdater.state();
+  quitting = true;
+  const state = await desktopUpdater.install();
+  // A failed install stays ready for retry but reports a message. Restore normal
+  // window behavior while the user keeps working after that failure.
+  if (state.phase !== "ready" || state.message !== null) quitting = false;
+  return state;
+}
+
 function installApplicationMenu() {
   const computerAccess: Electron.MenuItemConstructorOptions = {
     label: "Computer Access…",
@@ -605,6 +677,11 @@ function installApplicationMenu() {
         .finally(() => installApplicationMenu())
         .catch(() => undefined);
     },
+  };
+  const checkForUpdates: Electron.MenuItemConstructorOptions = {
+    label: "Check for Updates…",
+    visible: updaterSupport(updaterEnvironment).supported,
+    click: () => void checkForUpdatesFromMenu(),
   };
   const changeServer: Electron.MenuItemConstructorOptions = {
     id: "change-rakazo-server",
@@ -645,6 +722,7 @@ function installApplicationMenu() {
             label: app.name,
             submenu: [
               { role: "about" },
+              checkForUpdates,
               { type: "separator" },
               computerAccess,
               revokeComputerAccess,
@@ -680,6 +758,8 @@ function installApplicationMenu() {
               revokeComputerAccess,
               changeServer,
               stopStack,
+              { type: "separator" },
+              checkForUpdates,
               { type: "separator" },
               { role: "quit" },
             ],
@@ -980,7 +1060,21 @@ function safeOrigin(targetUrl: string) {
   }
 }
 
+// A second launch on Linux/Windows would rerun host-computer setup, overwrite
+// the saved token and restart the local stack under the running instance.
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    const win = secondInstanceWindow(setupWindow, mainWindow);
+    if (win === null) return;
+    revealSecondInstanceWindow(win);
+  });
+}
+
 app.whenReady().then(async () => {
+  if (!hasSingleInstanceLock) return;
   installSessionPermissions(session.defaultSession, permissionTarget);
   const userDataDir = app.getPath("userData");
   try {
@@ -1164,6 +1258,7 @@ app.whenReady().then(async () => {
     createBadgeHandler(permissionTarget, (count) => app.setBadgeCount(count)),
   );
   ipcMain.handle("desktop.platform", () => process.platform);
+  ipcMain.handle("desktop.passkeys.rpIds", () => passkeyRpIds);
   ipcMain.handle("desktop.window.close", (event) => {
     windowFrom(event)?.close();
   });
@@ -1195,17 +1290,9 @@ app.whenReady().then(async () => {
   ipcMain.handle("desktop.update.download", (event) =>
     fromMainWindow(event) ? desktopUpdater.download() : desktopUpdater.state(),
   );
-  ipcMain.handle("desktop.update.install", async (event) => {
-    if (!fromMainWindow(event) || desktopUpdater.state().phase !== "ready") {
-      return desktopUpdater.state();
-    }
-    quitting = true;
-    const state = await desktopUpdater.install();
-    // A failed install stays ready for retry but reports a message. Restore normal
-    // window behavior while the user keeps working after that failure.
-    if (state.phase !== "ready" || state.message !== null) quitting = false;
-    return state;
-  });
+  ipcMain.handle("desktop.update.install", (event) =>
+    fromMainWindow(event) ? installUpdate() : desktopUpdater.state(),
+  );
   ipcMain.handle("desktop.setup.state", (event) => {
     if (!fromSetupWindow(event)) return null;
     return {

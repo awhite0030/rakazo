@@ -472,14 +472,14 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
   const foreground = useAppForeground();
   const router = useRouter();
   // Beside the chat list on a wide window, the chat has only the width the list leaves.
-  const { split, inboxHidden, contentWidth: windowWidth } = useSplitView();
+  const { split, inboxHidden, inboxShown, foldActive, contentWidth: windowWidth } = useSplitView();
   const nativeHeaderHeight = useHeaderHeight();
   const headerHeight = threadHeaderFloats() ? nativeHeaderHeight : 0;
   const headerClearance = threadHeaderClearance(headerHeight);
   const insets = useSafeAreaInsets();
   // An unfolded or tablet window keeps messages and the composer in a centred reading column.
   const columnInsets = readableGutters(windowWidth, {
-    left: split && !inboxHidden ? 0 : insets.left,
+    left: inboxShown ? 0 : insets.left,
     right: insets.right,
   });
   const columnWidth = windowWidth - columnInsets.left - columnInsets.right;
@@ -1032,7 +1032,7 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
             </Pressable>
           </View>
         ),
-      ...(split
+      ...(split && !foldActive
         ? {
             headerBackVisible: false,
             ...(iosAtLeast(26)
@@ -1063,9 +1063,10 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
               </Pressable>
             ),
           }
-        : // Folding back takes the list away, so the chat gets its back button again.
+        : // Folding back takes the list away, so the chat gets its back button again. Folded like
+          // a book, the list stays beside the chat, so it needs neither.
           {
-            headerBackVisible: true,
+            headerBackVisible: !split,
             headerLeft: undefined,
             ...(iosAtLeast(26) ? { unstable_headerLeftItems: () => [] } : {}),
           }),
@@ -1075,6 +1076,7 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
     });
   }, [
     split,
+    foldActive,
     inboxHidden,
     readOnly,
     restoring,
@@ -1454,6 +1456,11 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
   // After "Mark as unread" on a message, the chat stays unread for the rest of this visit. The
   // hold names the visit, so returning to the chat (a new visit) reads it again.
   const heldUnread = useRef<number | null>(null);
+  const [markedUnread, setMarkedUnread] = useState<{ visit: number; messageId: string } | null>(
+    null,
+  );
+  const markedUnreadMessageId =
+    markedUnread?.visit === readVisit.current.visit ? markedUnread.messageId : undefined;
   const markUnreadFrom = (message: MobileMessage) => {
     const visit = readVisit.current.visit;
     const target = groupId ?? botId;
@@ -1465,10 +1472,16 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
         ...(groupId ? { groupId } : { botId: botId! }),
         messageId: message.id,
       }),
-    ).catch((err) => {
-      if (heldUnread.current === visit) heldUnread.current = null;
-      Alert.alert(t("Could not update chat"), errorText(err, t("Try again.")));
-    });
+    )
+      .then(() => {
+        if (readVisit.current.visit === visit) {
+          setMarkedUnread({ visit, messageId: message.id });
+        }
+      })
+      .catch((err) => {
+        if (heldUnread.current === visit) heldUnread.current = null;
+        Alert.alert(t("Could not update chat"), errorText(err, t("Try again.")));
+      });
   };
 
   const markReadIfVisible = useCallback(() => {
@@ -1800,6 +1813,8 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
   }
 
   function followOwnSend() {
+    // Writing in the chat means the user has caught up, so the "New" divider goes.
+    setReadBoundary({ visit: readVisit.current.visit, seq: null });
     if (pinnedAroundRef.current || jumpScrollTarget.current) showLatest();
     performScroll(scrollBehavior.current.onOwnSend());
     publishThreadScrollState(scrollBehavior.current.state());
@@ -1954,6 +1969,7 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
       const targetBotId = botId;
       const targetGroupId = groupId;
       if (readOnly || (!targetBotId && !targetGroupId) || !message.runId) return;
+      setReadBoundary({ visit: readVisit.current.visit, seq: null });
       await rpc("threads/answer", {
         ...(targetGroupId ? { groupId: targetGroupId } : { botId: targetBotId! }),
         runId: message.runId,
@@ -2517,6 +2533,7 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
           separator={separatorIds.has(message.id)}
           headerAdjacent={threadHeaderFloats() && message.id === visibleMessages[0]?.id}
           unreadDivider={message.id === unreadDividerId}
+          markedUnread={message.id === markedUnreadMessageId}
           replyAuthor={replyAuthor}
           replyFallbackText={parent ? previewMessageText(parent) : undefined}
           waitingForUser={[...(snap?.activeRuns ?? []), ...(snap?.run ? [snap.run] : [])].some(
@@ -2570,6 +2587,7 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
       separatorIds,
       visibleMessages[0]?.id,
       unreadDividerId,
+      markedUnreadMessageId,
       columnWidth,
       t,
       locale,
@@ -3271,7 +3289,7 @@ function previewMessageText(message: MobileMessage): string {
     .flatMap((block) => {
       if (block.kind === "channel_message" && block.text) {
         return [
-          `${messagingProviderLabel(block.provider, block.transport)} · ${block.fromLabel}: ${block.text}`,
+          `${block.fromLabel} (${messagingProviderLabel(block.provider, block.transport)}): ${block.text}`,
         ];
       }
       if (block.kind === "text" && block.text) {
@@ -3372,6 +3390,7 @@ type MessageRowProps = {
   separator: boolean;
   headerAdjacent: boolean;
   unreadDivider: boolean;
+  markedUnread: boolean;
   replyAuthor: string;
   replyFallbackText?: string;
   waitingForUser: boolean;
@@ -3416,6 +3435,7 @@ const MessageRow = memo(function MessageRow({
   separator,
   headerAdjacent,
   unreadDivider,
+  markedUnread,
   replyAuthor,
   replyFallbackText,
   messageReactions,
@@ -3475,7 +3495,7 @@ const MessageRow = memo(function MessageRow({
     const includeSpeak = message.role === "bot" && !onCall && Boolean(blockText(message));
     const includeSelect = messageText.trim().length > 0;
     // Any sent message can be marked unread; the next open starts New at the first reply from it.
-    const includeUnread = !readOnly && canMarkMessageUnread(message);
+    const includeUnread = !readOnly && !markedUnread && canMarkMessageUnread(message);
     const reply = () => actions.reply(message);
     const quote = () => actions.quote(message);
     const speakMessage = () => actions.speak(message);
@@ -3652,6 +3672,7 @@ const MessageRow = memo(function MessageRow({
   }, [
     message,
     actions,
+    markedUnread,
     readOnly,
     onCall,
     colorScheme,
@@ -4106,8 +4127,10 @@ const MessageBubbleContent = memo(function MessageBubbleContent({
         {...actionProps}
         style={{ width: "100%", paddingVertical: 4, alignItems: "center" }}
       >
+        <Text style={{ color: tokens.mutedForeground, fontSize: 12, textAlign: "center" }}>
+          {messagingProviderLabel(channelMessage.provider, channelMessage.transport)}
+        </Text>
         <Text style={{ color: tokens.mutedForeground, fontSize: 13.5, textAlign: "center" }}>
-          {messagingProviderLabel(channelMessage.provider, channelMessage.transport)} ·{" "}
           {channelMessage.fromLabel}: {channelMessage.text}
         </Text>
       </Pressable>
@@ -4211,6 +4234,8 @@ const MessageBubbleContent = memo(function MessageBubbleContent({
               ) : canAnswer && onAnswer ? (
                 <AskActions
                   actions={askBlock.actions}
+                  site={askBlock.site}
+                  approval={isApprovalAskBlock(askBlock)}
                   instructions={askBlock.instructionUpdate?.after}
                   accessibilityActions={actionProps.accessibilityActions}
                   onAccessibilityAction={actionProps.onAccessibilityAction}
@@ -4258,7 +4283,7 @@ const MessageBubbleContent = memo(function MessageBubbleContent({
     .flatMap((block) => {
       if (block.kind === "channel_message" && block.text) {
         return [
-          `${messagingProviderLabel(block.provider, block.transport)} · ${block.fromLabel}: ${block.text}`,
+          `${block.fromLabel} (${messagingProviderLabel(block.provider, block.transport)}): ${block.text}`,
         ];
       }
       return block.kind === "text" && block.text ? [block.text] : [];
