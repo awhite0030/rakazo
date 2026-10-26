@@ -486,20 +486,50 @@ export function VoiceSettingsOverlay({
                 <FieldLabel htmlFor={voiceSelectId}>
                   <Trans>Voice</Trans>
                 </FieldLabel>
-                <NativeSelect
-                  id={voiceSelectId}
-                  className="w-full"
-                  value={voiceId}
-                  disabled={busy}
-                  onChange={(event) => void chooseVoice(event.target.value)}
-                >
-                  {voiceOptions.map((voice) => (
-                    <NativeSelectOption key={voice.id} value={voice.id}>
-                      {voice.label}
-                      {voice.description ? ` (${voice.description})` : ""}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
+                {selfHosted ? (
+                  <>
+                    <Input
+                      id={voiceSelectId}
+                      list={`${voiceSelectId}-list`}
+                      className="w-full"
+                      value={voiceId}
+                      disabled={busy}
+                      onChange={(event) => {
+                        edited.current.add("voiceId");
+                        setVoiceId(event.target.value);
+                      }}
+                      onBlur={() => void chooseVoice(voiceId)}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter") return;
+                        event.preventDefault();
+                        event.currentTarget.blur();
+                      }}
+                    />
+                    <datalist id={`${voiceSelectId}-list`}>
+                      {voiceOptions.map((voice) => (
+                        <option key={voice.id} value={voice.id}>
+                          {voice.label}
+                          {voice.description ? ` (${voice.description})` : ""}
+                        </option>
+                      ))}
+                    </datalist>
+                  </>
+                ) : (
+                  <NativeSelect
+                    id={voiceSelectId}
+                    className="w-full"
+                    value={voiceId}
+                    disabled={busy}
+                    onChange={(event) => void chooseVoice(event.target.value)}
+                  >
+                    {voiceOptions.map((voice) => (
+                      <NativeSelectOption key={voice.id} value={voice.id}>
+                        {voice.label}
+                        {voice.description ? ` (${voice.description})` : ""}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                )}
               </Field>
               {selected.id === "fish-audio" ? (
                 <Field className="mt-6">
