@@ -267,6 +267,7 @@ const IMAGE_NOT_FOUND = [
   "not found: manifest",
   "no matching manifest",
   "repository does not exist",
+  "failed to resolve reference",
 ];
 const NETWORK = [
   "no such host",
