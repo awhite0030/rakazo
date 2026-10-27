@@ -261,7 +261,7 @@ export function VoiceSettingsOverlay({
     setError(null);
     try {
       await rpc.voice.setVoice({ scope, voiceId: nextVoiceId, provider: selected?.id });
-      await refresh(selected?.id);
+      await refresh(selected?.id, { keepForm: true });
     } catch (err) {
       setError(errorText(err, t`Could not save that voice`));
     } finally {
@@ -498,7 +498,10 @@ export function VoiceSettingsOverlay({
                         edited.current.add("voiceId");
                         setVoiceId(event.target.value);
                       }}
-                      onBlur={() => void chooseVoice(voiceId)}
+                      onBlur={() => {
+                        const next = voiceId.trim();
+                        if (next && next !== credential?.voiceId) void chooseVoice(next);
+                      }}
                       onKeyDown={(event) => {
                         if (event.key !== "Enter") return;
                         event.preventDefault();
