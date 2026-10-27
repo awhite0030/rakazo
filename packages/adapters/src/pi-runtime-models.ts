@@ -5,9 +5,10 @@ import type { AgentRunRequest } from "@rakazo/adapter-kit";
 import { canonicalPiProviderId, usableModelId } from "@rakazo/contracts";
 import { DEFAULT_OPENROUTER_MODEL_ID } from "./deployment-model.js";
 import { PiRuntimeCredentialStore, toOAuthCredential } from "./pi-credentials.js";
-import { liveModelSibling } from "./pi-live-model.js";
+import { liveModelSibling, withLiveImageInput } from "./pi-live-model.js";
 import { registerLocalProvider } from "./pi-local-provider.js";
 import { applyPiModelCompatibility } from "./pi-model-compat.js";
+import { CHATGPT_OAUTH_PROVIDER } from "./pi-oauth.js";
 import {
   OPENAI_COMPATIBLE_PROVIDER_ID,
   registerOpenAiCompatibleCatalog,
@@ -44,12 +45,8 @@ function configuredOpenRouterModel(
   id: string,
   contextWindow = 16_384,
 ): Model<"openai-completions"> {
-  // A configured model can intentionally be newer than Pi's static catalog. Keep
-  // pricing conservative, but enable reasoning: unknown OpenRouter endpoints
-  // (e.g. gemini-3.7-flash before the snapshot catches up) often mandate it, and
-  // thinkingLevel "off" becomes effort "none" which those endpoints reject.
-  // Reserve half the conservative fallback window for input. A model card's
-  // configured limits override this placeholder below.
+  // A configured model can be newer than Pi's static catalog. Enable reasoning:
+  // unknown OpenRouter endpoints often mandate it and reject effort "none".
   return {
     id,
     name: id,
@@ -103,6 +100,9 @@ export function resolveRuntimeModel(modelConfig: AgentRunRequest["model"]): {
         : {}),
       ...(modelConfig.maxTokens !== undefined ? { maxTokens: modelConfig.maxTokens } : {}),
     };
+  }
+  if (model && provider === CHATGPT_OAUTH_PROVIDER) {
+    model = withLiveImageInput(model, modelConfig.acceptsImages);
   }
   const apiKey = modelConfig.oauth
     ? undefined

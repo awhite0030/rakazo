@@ -55,6 +55,7 @@ import {
   ArtifactVersionSchema,
   ArtifactWithContentSchema,
   AvatarStyleSchema,
+  BillingClientSchema,
   BillingStatusSchema,
   BotMcpServerSchema,
   BotSchema,
@@ -139,6 +140,7 @@ import {
 } from "./integration-settings.js";
 import { ModelHeadersSchema } from "./model-headers.js";
 import { ModelRoleSchema, ModelRoleUpdateSchema, ModelRoleViewSchema } from "./model-roles.js";
+import { PaymentWalletStatusSchema } from "./payments.js";
 import { MessageReactionSchema } from "./reactions.js";
 import { RoutineWatchSchema } from "./routine-watch.js";
 import {
@@ -234,18 +236,30 @@ export const appContract = {
   me: oc.output(MeSchema),
   billing: {
     status: oc.output(BillingStatusSchema),
+    /** Re-reads the subscription from the provider, e.g. right after a mobile checkout. */
+    refresh: oc.output(BillingStatusSchema),
     selectFunding: oc
-      .input(z.object({ funding: z.enum(["byok", "credits"]) }))
+      .input(z.object({ funding: z.enum(["byok", "credits"]), client: BillingClientSchema }))
       /** `url` is the checkout to pay for the own-key plan before it has access. */
       .output(z.object({ ok: z.literal(true), url: z.string().url().optional() })),
     purchaseCredits: oc
-      .input(z.object({ amountCents: ModelCreditAmountSchema, monthly: z.boolean() }))
+      .input(
+        z.object({
+          amountCents: ModelCreditAmountSchema,
+          monthly: z.boolean(),
+          client: BillingClientSchema,
+        }),
+      )
       .output(z.object({ url: z.string().url() })),
     setMonthlyCredits: oc
       .input(z.object({ amountCents: ModelCreditAmountSchema }))
       .output(z.object({ ok: z.literal(true) })),
-    checkout: oc.output(z.object({ url: z.string().url() })),
-    portal: oc.output(z.object({ url: z.string().url() })),
+    checkout: oc
+      .input(z.object({ client: BillingClientSchema }).optional())
+      .output(z.object({ url: z.string().url() })),
+    portal: oc
+      .input(z.object({ client: BillingClientSchema }).optional())
+      .output(z.object({ url: z.string().url() })),
   },
   preferences: {
     update: oc
@@ -811,7 +825,7 @@ export const appContract = {
       .output(z.object({ runId: Id })),
     remove: oc.input(z.object({ skillId: Id })).output(z.object({ ok: z.literal(true) })),
   },
-  /** Claude Agent Skills (SKILL.md recipes) shared across assistants (not taught/demo skills). Pi already understands this format; we persist and inject them. */
+  /** Claude Agent Skills (SKILL.md recipes) shared across assistants (not taught/demo skills). */
   agentSkills: {
     list: oc.output(z.array(AgentSkillCatalogEntrySchema)),
     get: oc
@@ -1124,6 +1138,13 @@ export const appContract = {
   },
   runs: {
     list: oc.input(z.object({ filter: z.enum(["active", "recent"]) })).output(RunsListOutputSchema),
+  },
+  /** The signed-in user's wallet; absent when the deployment offers none. */
+  paymentWallet: {
+    status: oc.output(PaymentWalletStatusSchema),
+    /** Starts a sign-in the user finishes with the provider; `status` then reports it. */
+    connect: oc.output(PaymentWalletStatusSchema),
+    disconnect: oc.output(PaymentWalletStatusSchema),
   },
   voice: {
     catalog: oc.output(z.array(VoiceCatalogEntrySchema)),
