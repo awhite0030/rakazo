@@ -812,6 +812,7 @@ function SpaceShell() {
             phoneCallsEnabled={Boolean(bootstrapMe?.phoneCallsEnabled)}
             inCall={Boolean(active) && call?.botId === active?.id}
             computerPanelOpen={panel === "computer"}
+            hasSidebar={!botsSidebarCollapsed && !isMobileSidebar}
             onOpenNavigation={() => setMobileSidebarOpen(true)}
             onOpenChatSettings={() => setPanel(inGroup ? "group-settings" : "settings")}
             onCall={(bot) => {

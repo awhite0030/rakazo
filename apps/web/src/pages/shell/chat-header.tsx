@@ -3,6 +3,7 @@ import type { Bot, Group, ThreadSnapshot } from "@rakazo/contracts";
 import { BotAvatar, Button, GroupAvatar } from "@rakazo/ui-web";
 import { Menu, Monitor, Phone } from "lucide-react";
 import { IconTooltip } from "../../components/IconTooltip";
+import { desktopBridge } from "../../lib/desktop";
 
 /** The floating header over the transcript: navigation, the chat's name, call and computer. */
 export function ChatHeader({
@@ -13,6 +14,7 @@ export function ChatHeader({
   phoneCallsEnabled,
   inCall,
   computerPanelOpen,
+  hasSidebar,
   onOpenNavigation,
   onOpenChatSettings,
   onCall,
@@ -25,14 +27,20 @@ export function ChatHeader({
   phoneCallsEnabled: boolean;
   inCall: boolean;
   computerPanelOpen: boolean;
+  hasSidebar?: boolean;
   onOpenNavigation: () => void;
   onOpenChatSettings: () => void;
   onCall: (bot: Bot) => void;
   onToggleComputer: (bot: Bot) => void;
 }) {
   const { t } = useLingui();
+  const hasWindowChrome = Boolean(desktopBridge());
+  // When there is no sidebar (e.g. mobile or mini), we must leave space for macOS window controls
+  const needsChromePadding = hasWindowChrome && !hasSidebar;
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 grid grid-cols-[1fr_minmax(0,auto)_1fr] items-center gap-2 px-3 py-[13px] md:px-[22px] [&_button]:pointer-events-auto">
+    <div
+      className={`pointer-events-none absolute inset-x-0 top-0 z-10 grid grid-cols-[1fr_minmax(0,auto)_1fr] items-center gap-2 py-[13px] pe-3 md:pe-[22px] [&_button]:pointer-events-auto ${needsChromePadding ? "ps-[80px]" : "ps-3 md:ps-[22px]"}`}
+    >
       <div className="flex items-center">
         <Button
           variant="floating"
