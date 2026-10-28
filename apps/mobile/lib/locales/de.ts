@@ -12,6 +12,7 @@ export const DE_MESSAGES: Record<string, string> = {
   "Retry screen": "Bildschirm erneut verbinden",
   "The screen connection closed.": "Die Bildschirmverbindung wurde geschlossen.",
   Approvals: "Freigaben",
+  Rules: "Regeln",
   "Never ask": "Nie fragen",
   Auto: "Auto",
   Ask: "Fragen",
@@ -167,7 +168,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Save the workspace and install current software.":
     "Den Arbeitsbereich speichern und aktuelle Software installieren.",
   "More computer actions": "Weitere Computeraktionen",
-  // shared/const
   "Chat Settings": "Chat-Einstellungen",
   "Configure a plugin catalog on the server to connect apps.":
     "Richte auf dem Server einen Plugin-Katalog ein, um Apps zu verbinden.",
@@ -179,7 +179,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Sign-up did not return a session": "Die Registrierung hat keine Sitzung zurückgegeben",
   "{count} model": "{count} Modell",
   "{count} models": "{count} Modelle",
-  // app/_layout.tsx
   Account: "Konto",
   "Change password": "Passwort ändern",
   "Chat settings": "Chat-Einstellungen",
@@ -195,7 +194,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Server integrations": "Server-Integrationen",
   Thread: "Thread",
   Voice: "Stimme",
-  // app/sign-in.tsx
   "Already have an account?": "Du hast bereits ein Konto?",
   "Back to sign in": "Zurück zur Anmeldung",
   "Check your email": "Prüfe deine E-Mails",
@@ -219,7 +217,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Sign up for Rakazo": "Bei Rakazo registrieren",
   "Use a custom server": "Eigenen Server verwenden",
   "Use default server": "Standardserver verwenden",
-  // app/index.tsx
   Activity: "Aktivität",
   "Collapse {name}": "{name} einklappen",
   "Could not create bot": "Bot konnte nicht erstellt werden",
@@ -248,7 +245,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Search conversations, files, and routines": "Unterhaltungen, Dateien und Routinen durchsuchen",
   "Searching…": "Suche…",
   "Space actions for {name}": "Space-Aktionen für {name}",
-  // app/(settings)/space.tsx
   Customize: "Anpassen",
   "Customize {setting}": "{setting} anpassen",
   "Tap + to create a bot": "Tippe auf +, um einen Bot zu erstellen",
@@ -257,7 +253,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Delete {name} and its {count} bots?": "{name} und seine {count} Bots löschen?",
   "notifications silenced": "Benachrichtigungen stumm",
   unread: "ungelesen",
-  // app/thread.tsx
   "@{name}": "@{name}",
   "Add a voice provider in Voice settings.": "Füge unter Stimme einen Sprachanbieter hinzu.",
   Agent: "Agent",
@@ -388,7 +383,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "{name} (permission denied)": "{name} (Zugriff verweigert)",
   "{name} (unsupported type)": "{name} (Dateityp nicht unterstützt)",
   "{name} is working": "{name} arbeitet",
-  // app/bot-settings.tsx
   Advanced: "Erweitert",
   Color: "Farbe",
   "Color {number}": "Farbe {number}",
@@ -413,7 +407,6 @@ export const DE_MESSAGES: Record<string, string> = {
   Thinking: "Denkmodus",
   Title: "Titel",
   "What this bot is for": "Wofür dieser Bot gedacht ist",
-  // app/group-settings.tsx
   "Could not delete group": "Gruppe konnte nicht gelöscht werden",
   "Could not load group": "Gruppe konnte nicht geladen werden",
   "Could not save group": "Gruppe konnte nicht gespeichert werden",
@@ -422,17 +415,14 @@ export const DE_MESSAGES: Record<string, string> = {
   "Group name": "Gruppenname",
   "Group not found": "Gruppe nicht gefunden",
   Members: "Mitglieder",
-  // app/new-group.tsx
   "Could not create group": "Gruppe konnte nicht erstellt werden",
   "Creating…": "Wird erstellt…",
-  // app/new-space.tsx
   "Could not create space": "Space konnte nicht erstellt werden",
   "Create space": "Space erstellen",
   "Customer support": "Kundensupport",
   "It could not be opened. Try again from the sidebar.":
     "Er konnte nicht geöffnet werden. Versuche es erneut über die Seitenleiste.",
   "Space created": "Space erstellt",
-  // app/routine.tsx
   Active: "Aktiv",
   "Could not load routine": "Routine konnte nicht geladen werden",
   "Git event": "Git-Ereignis",
@@ -446,7 +436,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Teams message": "Teams-Nachricht",
   "This routine no longer exists": "Diese Routine gibt es nicht mehr",
   Webhook: "Webhook",
-  // app/bot-profile.tsx
   Profile: "Profil",
   Routines: "Routinen",
   "Could not load routines": "Routinen konnten nicht geladen werden",
@@ -464,7 +453,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Could not update routine": "Routine konnte nicht aktualisiert werden",
   "Get notified when this Bot finishes or needs input":
     "Benachrichtigung, wenn dieser Bot fertig ist oder Eingabe braucht",
-  // app/computer.tsx
   Bot: "Bot",
   "Close computer": "Computer schließen",
   "Computer keyboard": "Computertastatur",
@@ -489,7 +477,6 @@ export const DE_MESSAGES: Record<string, string> = {
   Skip: "Überspringen",
   "Take control": "Kontrolle übernehmen",
   "You have control": "Du hast die Kontrolle",
-  // app/(settings)/models.tsx
   "Active model": "Aktives Modell",
   "Authorization code": "Autorisierungscode",
   "Configured by deployment": "Durch die Bereitstellung konfiguriert",
@@ -549,7 +536,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "exact-model-id": "exact-model-id",
   "http://127.0.0.1:8000/v1": "http://127.0.0.1:8000/v1",
   "sk-…": "sk-…",
-  // app/(settings)/integrations.tsx
   "1 tool": "1 Tool",
   "Account label": "Kontobezeichnung",
   Accounts: "Konten",
@@ -605,7 +591,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "https://example.com/openapi.json": "https://example.com/openapi.json",
   "https://executor.example/mcp": "https://executor.example/mcp",
   "{count} tools": "{count} Tools",
-  // app/(settings)/integration-setup.tsx
   "API key": "API-Schlüssel",
   "Account ID": "Konto-ID",
   "Gateway ID": "Gateway-ID",
@@ -625,7 +610,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Project ID": "Projekt-ID",
   "Set up Executor on your server in the web app.":
     "Richte Executor auf deinem Server in der Web-App ein.",
-  // app/(settings)/voice.tsx
   Connect: "Verbinden",
   "Connect a voice provider first.": "Verbinde zuerst einen Sprachanbieter.",
   "Connected {name}.": "{name} verbunden.",
@@ -655,7 +639,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "This device": "Dieses Gerät",
   "Your phone's built-in voice. Free, no account needed":
     "Die eingebaute Stimme deines Telefons. Kostenlos, kein Konto nötig",
-  // app/(settings)/account.tsx
   "Agent messages": "Agent-Nachrichten",
   Appearance: "Erscheinungsbild",
   Archived: "Archiviert",
@@ -694,12 +677,10 @@ export const DE_MESSAGES: Record<string, string> = {
   "Your account": "Dein Konto",
   "{runs} runs, {tokens} tokens": "{runs} Ausführungen, {tokens} Token",
   "{calls} calls, {tokens} tokens": "{calls} Aufrufe, {tokens} Token",
-  // app/(settings)/change-password.tsx
   "Confirm password": "Passwort bestätigen",
   "Could not change password": "Passwort konnte nicht geändert werden",
   "New password": "Neues Passwort",
   "Passwords do not match": "Die Passwörter stimmen nicht überein",
-  // components/AskActions.tsx
   "Allow once": "Einmal erlauben",
   "Always allow": "Immer erlauben",
   "Always allow this tool": "Dieses Tool immer erlauben",
@@ -707,16 +688,13 @@ export const DE_MESSAGES: Record<string, string> = {
   "Could not submit answer": "Antwort konnte nicht gesendet werden",
   Deny: "Ablehnen",
   "Please try again.": "Versuche es erneut.",
-  // components/AppConnectCard.tsx
   "Authorization timed out. Please try again.":
     "Zeitüberschreitung bei der Autorisierung. Versuche es erneut.",
   "Authorize {name}": "{name} autorisieren",
   "Could not authorize this app": "App konnte nicht autorisiert werden",
   "{name} connection": "Verbindung mit {name}",
-  // components/bot-avatar.tsx
   "Notifications silenced": "Benachrichtigungen stumm",
   Working: "Arbeitet",
-  // components/bot-organize-modal.tsx
   "Close chat organization": "Chat-Organisation schließen",
   "Could not update chat": "Chat konnte nicht aktualisiert werden",
   "Create section": "Abschnitt erstellen",
@@ -736,7 +714,6 @@ export const DE_MESSAGES: Record<string, string> = {
   Pinned: "Angeheftet",
   Unassigned: "Nicht zugewiesen",
   Unpin: "Lösen",
-  // components/computer-maintenance-actions.tsx
   "Could not update computer": "Computer konnte nicht aktualisiert werden",
   "Recover computer": "Computer wiederherstellen",
   "Recovering…": "Wird wiederhergestellt…",
@@ -750,10 +727,8 @@ export const DE_MESSAGES: Record<string, string> = {
     "Stellt den zuletzt gespeicherten Arbeitsbereich wieder her. Nicht gespeicherte Arbeit auf dem Computer geht verloren.",
   "Update computer": "Computer aktualisieren",
   "Updating…": "Wird aktualisiert…",
-  // components/computer-mode-picker.tsx
   Private: "Privat",
   Team: "Team",
-  // components/computer-update-progress.tsx
   "Continue in Background": "Im Hintergrund fortfahren",
   "Could not complete action": "Aktion konnte nicht abgeschlossen werden",
   Dismiss: "Schließen",
@@ -779,13 +754,11 @@ export const DE_MESSAGES: Record<string, string> = {
   "Update failed": "Aktualisierung fehlgeschlagen",
   "Updating Team Computer": "Team-Computer wird aktualisiert",
   "Updating {name}’s Computer": "Computer von {name} wird aktualisiert",
-  // components/markdown-artifact-preview.tsx
   "Close preview": "Vorschau schließen",
   "Could not load this file.": "Datei konnte nicht geladen werden.",
   "Could not share file": "Datei konnte nicht geteilt werden",
   "Loading preview…": "Vorschau wird geladen…",
   "Share {name}": "{name} teilen",
-  // lib/activity.ts
   "Needs input": "Eingabe erforderlich",
   "Needs takeover": "Übernahme erforderlich",
   Queued: "In Warteschlange",
@@ -795,7 +768,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "{count}d ago": "vor {count} T.",
   "{count}h ago": "vor {count} Std.",
   "{count}m ago": "vor {count} Min.",
-  // lib/api.ts
   "Could not clear the custom server URL": "Die eigene Server-URL konnte nicht gelöscht werden",
   "Could not clear the local session": "Die lokale Sitzung konnte nicht gelöscht werden",
   "Could not clear the previous server session":
@@ -808,24 +780,19 @@ export const DE_MESSAGES: Record<string, string> = {
     "Der Server hat sich beim Start der Anfrage geändert",
   "Update your server to use AI data sharing in this mobile version.":
     "Aktualisiere deinen Server, um in dieser mobilen Version KI-Daten zu teilen.",
-  // lib/app-connect.ts
   Authorize: "Autorisieren",
   "Waiting…": "Warten…",
-  // lib/app-version.ts
   Embedded: "Eingebettet",
   "OTA {id}": "OTA {id}",
   "OTA {id}, {date}": "OTA {id}, {date}",
   "{channel} {id}": "{channel} {id}",
   "{channel} {id}, {date}": "{channel} {id}, {date}",
-  // lib/artifact-open.ts
   "Saved {name} locally": "{name} lokal gespeichert",
-  // lib/bot-lifecycle.ts
   "Could not delete bot": "Bot konnte nicht gelöscht werden",
   "Delete memories too": "Erinnerungen ebenfalls löschen",
   "Its conversation, files, and routines will be permanently deleted. What should happen to its memories?":
     "Unterhaltung, Dateien und Routinen werden endgültig gelöscht. Was soll mit den Erinnerungen geschehen?",
   "Keep memories": "Erinnerungen behalten",
-  // lib/computer.ts
   Asleep: "Im Ruhezustand",
   "Booting live desktop…": "Live-Desktop wird gestartet…",
   "Computer failed to boot": "Computer konnte nicht gestartet werden",
@@ -835,7 +802,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Team Computer": "Team-Computer",
   "{name} is using it": "{name} verwendet ihn gerade",
   "{name}’s computer": "Computer von {name}",
-  // lib/endpoint.ts
   "Could not reach that server": "Dieser Server ist nicht erreichbar",
   "Enter a server URL": "Gib eine Server-URL ein",
   "Public servers need https://. HTTP only works on your local network.":
@@ -845,17 +811,13 @@ export const DE_MESSAGES: Record<string, string> = {
   "That URL is missing a host": "Dieser URL fehlt ein Host",
   "That doesn’t look like a URL": "Das sieht nicht nach einer URL aus",
   "Use an http or https URL": "Verwende eine http- oder https-URL",
-  // lib/live-notifications.ts
   "Android blocked notifications.": "Android hat Benachrichtigungen blockiert.",
-  // lib/user-error.ts
   "Could not reach the server": "Server konnte nicht erreicht werden",
   "Request timed out": "Zeitüberschreitung der Anfrage",
   "Enter a password": "Gib ein Passwort ein",
   "Enter a valid email": "Gib eine gültige E-Mail-Adresse ein",
   "Something went wrong. Try again.": "Etwas ist schiefgelaufen. Versuche es erneut.",
-  // lib/voice.ts
   "Could not play that clip.": "Dieser Clip konnte nicht abgespielt werden.",
-  // app/(settings)/models.tsx
   "Move down": "Nach unten",
   "Move up": "Nach oben",
   "Tried in order if the active model fails.":
@@ -881,7 +843,6 @@ export const DE_MESSAGES: Record<string, string> = {
     "Warte auf Anmeldung — der Code läuft in etwa {minutes} Minuten ab.",
   "Waiting for sign-in — the link expires in about {minutes} minutes.":
     "Warte auf Anmeldung — der Link läuft in etwa {minutes} Minuten ab.",
-  // call
   "Allow microphone access to call a bot.": "Erlaube den Mikrofonzugriff, um einen Bot anzurufen.",
   "Allow speech recognition in Settings, or connect ElevenLabs, OpenAI, or Fish Audio.":
     "Erlaube die Spracherkennung in den Einstellungen oder verbinde ElevenLabs, OpenAI oder Fish Audio.",
@@ -913,7 +874,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Hi, this is how I'll sound.": "Hallo, so klinge ich.",
   "Open external link?": "Externen Link öffnen?",
   Open: "Öffnen",
-  // ai-data-sharing
   "AI models": "KI-Modelle",
   Memory: "Gedächtnis",
   "Privacy policies": "Datenschutzerklärungen",
@@ -1025,7 +985,6 @@ export const DE_MESSAGES: Record<string, string> = {
   "Could not update billing": "Abrechnung konnte nicht aktualisiert werden",
   Credits: "Guthaben",
   "Available credits": "Verfügbares Guthaben",
-  Refresh: "Aktualisieren",
   "Monthly credits": "Monatliches Guthaben",
   "Upgrade now": "Jetzt upgraden",
   "Downgrade at renewal": "Bei Verlängerung downgraden",
@@ -1033,17 +992,45 @@ export const DE_MESSAGES: Record<string, string> = {
   "Add credits": "Guthaben hinzufügen",
   "Manage billing": "Abrechnung verwalten",
   "Your subscription or API key": "Dein Abo oder API-Schlüssel",
-  "Free. Works with your ChatGPT or Claude plan.":
-    "Kostenlos. Funktioniert mit deinem ChatGPT- oder Claude-Abo.",
-  "{price} / month. Works with your ChatGPT or Claude plan.":
-    "{price} / Monat. Funktioniert mit deinem ChatGPT- oder Claude-Abo.",
-  "Free plan ends": "Kostenloser Tarif endet",
   Subscribe: "Abonnieren",
-  "Use my subscription or API key": "Mein Abo oder meinen API-Schlüssel verwenden",
-  "Start {days}-day free trial": "Kostenlose {days}-Tage-Testphase starten",
   "Monthly credits expire at renewal. Top-ups do not expire.":
     "Monatliches Guthaben verfällt bei Verlängerung. Einmalige Aufladungen verfallen nicht.",
   "Use Rakazo credits": "Rakazo-Guthaben verwenden",
+  "Choose a plan": "Tarif wählen",
+  "Change plan": "Tarif ändern",
+  Plan: "Tarif",
+  None: "Keiner",
+  "Free trial": "Kostenlose Testphase",
+  "Rakazo credits": "Rakazo-Guthaben",
+  "Free until": "Kostenlos bis",
+  Ends: "Endet am",
+  Renews: "Verlängert sich am",
+  "Could not open billing": "Abrechnung konnte nicht geöffnet werden",
+  "Put your bots to work": "Lass deine Bots arbeiten",
+  "Bots with their own computer": "Bots mit eigenem Computer",
+  "Routines that run while you're away": "Routinen, die laufen, während du weg bist",
+  "Web, desktop and mobile apps": "Apps für Web, Desktop und Mobilgeräte",
+  "Start free trial": "Kostenlos testen",
+  Free: "Kostenlos",
+  "{price} / month": "{price} / Monat",
+  "{price} / month. Cancel anytime.": "{price} / Monat. Jederzeit kündbar.",
+  "{days} days free, then {price} / month. Cancel anytime.":
+    "{days} Tage kostenlos, danach {price} / Monat. Jederzeit kündbar.",
+  "{days} days free": "{days} Tage kostenlos",
+  "Works with your ChatGPT or Claude plan.": "Funktioniert mit deinem ChatGPT- oder Claude-Abo.",
+  "All {price} goes to model usage.": "Die vollen {price} fließen in die Modellnutzung.",
+  "Full access, nothing to pay": "Voller Zugriff, nichts zu zahlen",
+  "Day {days}": "Tag {days}",
+  "{price} / month begins": "Ab dann {price} / Monat",
+  "Only the owner of this account can choose a plan.":
+    "Nur der Inhaber dieses Kontos kann einen Tarif wählen.",
+  Terms: "AGB",
+  Privacy: "Datenschutz",
+  "You're all set": "Alles bereit",
+  "Your free trial has started": "Deine kostenlose Testphase hat begonnen",
+  "Free until {date}": "Kostenlos bis {date}",
+  "Connect your AI": "Deine KI verbinden",
+  "Start using Rakazo": "Mit Rakazo loslegen",
   "1 unread": "1 ungelesen",
   "{count} unread": "{count} ungelesen",
   "{count} need attention": "{count} brauchen Aufmerksamkeit",
@@ -1145,7 +1132,13 @@ export const DE_MESSAGES: Record<string, string> = {
     "{variable} ist reserviert. Wähle einen anderen Namen.",
   "Delete this Space's credentials?": "Zugangsdaten dieses Space löschen?",
   Show: "Anzeigen",
-  "Copy username": "Benutzernamen kopieren",
-  "Copy password": "Passwort kopieren",
+  "Copy {label}": "{label} kopieren",
+  Hidden: "Verborgen",
+  "Add field": "Feld hinzufügen",
+  Label: "Bezeichnung",
   "Could not show the credential": "Zugangsdaten konnten nicht angezeigt werden",
+  Wallet: "Wallet",
+  "Connect {name}": "{name} verbinden",
+  "Could not load wallet": "Wallet konnte nicht geladen werden",
+  "Could not update wallet": "Wallet konnte nicht aktualisiert werden",
 };

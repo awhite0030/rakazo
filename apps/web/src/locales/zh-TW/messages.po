@@ -513,6 +513,10 @@ msgstr "新增 Executor"
 msgid "Add fallback"
 msgstr "新增備援模型"
 
+#: src/components/LoginFields.tsx
+msgid "Add field"
+msgstr "新增欄位"
+
 #: src/pages/PluginsOverlay.tsx
 msgid "Add GraphQL"
 msgstr "新增 GraphQL"
@@ -1070,6 +1074,7 @@ msgstr "無法讀取影像"
 #: src/pages/model-settings/space-bots-model.tsx
 #: src/pages/ModelSettingsOverlay.tsx
 #: src/pages/Onboarding.tsx
+#: src/pages/PaymentWalletSettingsPanel.tsx
 #: src/pages/PluginsOverlay.tsx
 #: src/pages/shell/agent-import-undo.tsx
 #: src/pages/shell/create-bot-dialog.tsx
@@ -1474,6 +1479,7 @@ msgstr "請確認此瀏覽器工作階段可以存取該 URL，然後重新測�
 #: src/pages/memory-providers/SupermemorySettingsForm.tsx
 #: src/pages/MessagingSettingsPanel.tsx
 #: src/pages/model-settings/role-model-picker.tsx
+#: src/pages/PaymentWalletSettingsPanel.tsx
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Connect"
 msgstr "連線"
@@ -1611,12 +1617,14 @@ msgstr "對話"
 
 #: src/components/ComputersUnavailableHint.tsx
 #: src/components/markdown-copy.tsx
+#: src/components/VaultSettings.tsx
 #: src/pages/model-settings/connection-controls.tsx
 #: src/pages/Onboarding.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "Copied"
 msgstr "已複製"
 
+#: src/components/VaultSettings.tsx
 #: src/pages/model-settings/connection-controls.tsx
 #: src/pages/Onboarding.tsx
 #: src/pages/shell/message-hover-actions.tsx
@@ -2038,6 +2046,10 @@ msgstr "無法傳送重設郵件"
 msgid "Could not send that"
 msgstr "無法傳送"
 
+#: src/components/VaultSettings.tsx
+msgid "Could not show the credential"
+msgstr "無法顯示憑證"
+
 #: src/pages/McpServersOverlay.tsx
 msgid "Could not start OAuth"
 msgstr "無法開始 OAuth"
@@ -2106,6 +2118,10 @@ msgstr "無法驗證電腦設定（{failureMessage}）。請修復連線後再�
 msgid "Couldn't load messaging settings"
 msgstr "無法載入訊息設定"
 
+#: src/pages/PaymentWalletSettingsPanel.tsx
+msgid "Couldn't load your wallet"
+msgstr ""
+
 #: src/pages/MessagingSettingsPanel.tsx
 msgid "Couldn't update messaging settings"
 msgstr "無法更新訊息設定"
@@ -2113,6 +2129,10 @@ msgstr "無法更新訊息設定"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Couldn't update your timezone"
 msgstr "無法更新你的時區"
+
+#: src/pages/PaymentWalletSettingsPanel.tsx
+msgid "Couldn't update your wallet"
+msgstr ""
 
 #: src/pages/Board.tsx
 #: src/pages/shell/agent-import.tsx
@@ -2375,6 +2395,7 @@ msgstr "捨棄錄製內容"
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/MessagingSettingsPanel.tsx
 #: src/pages/ModelSettingsOverlay.tsx
+#: src/pages/PaymentWalletSettingsPanel.tsx
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Disconnect"
 msgstr "中斷"
@@ -2382,6 +2403,10 @@ msgstr "中斷"
 #: src/pages/ModelSettingsOverlay.tsx
 msgid "Disconnect {disconnectName}?"
 msgstr "要中斷 {disconnectName} 的連線嗎？"
+
+#: src/pages/PaymentWalletSettingsPanel.tsx
+msgid "Disconnect {name}?"
+msgstr ""
 
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Disconnect Self-hosted"
@@ -2538,10 +2563,6 @@ msgstr "需要驗證電子信箱"
 msgid "Enable {0}"
 msgstr "啟用 {0}"
 
-#: src/components/VaultSettings.tsx
-msgid "Encrypted and never shown again"
-msgstr "已加密，且不再顯示"
-
 #: src/pages/BillingSettingsPanel.tsx
 msgid "Ends {day}"
 msgstr "於 {day} 結束"
@@ -2553,10 +2574,6 @@ msgstr "何時參與… 忽略哪些內容…"
 #: src/lib/user-error.ts
 msgid "Enter a password"
 msgstr "請輸入密碼"
-
-#: src/components/VaultSettings.tsx
-msgid "Enter a username and password"
-msgstr "輸入使用者名稱與密碼"
 
 #: src/lib/user-error.ts
 msgid "Enter a valid email"
@@ -2901,6 +2918,14 @@ msgstr "試聽"
 msgid "Hi, this is how I'll sound when I read replies out loud."
 msgstr "你好，這是我朗讀回覆時的聲音。"
 
+#: src/components/LoginFields.tsx
+msgid "Hidden"
+msgstr "隱藏"
+
+#: src/components/VaultSettings.tsx
+msgid "Hide"
+msgstr "隱藏"
+
 #: src/components/I18nBootstrap.tsx
 msgid "Hide password"
 msgstr "隱藏密碼"
@@ -3165,6 +3190,10 @@ msgstr "已保留"
 #: src/pages/RoutineEditor.tsx
 msgid "key"
 msgstr "金鑰"
+
+#: src/components/LoginFields.tsx
+msgid "Label"
+msgstr "標籤"
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Language"
@@ -3977,6 +4006,7 @@ msgid "One-time purchase. Credits do not expire."
 msgstr "單次購買，額度不會到期。"
 
 #: src/components/markdown-link-prompt.tsx
+#: src/pages/PaymentWalletSettingsPanel.tsx
 #: src/pages/shell/computer-panel.tsx
 #: src/pages/shell/import-setup-card.tsx
 #: src/pages/shell/message-view.tsx
@@ -4428,6 +4458,7 @@ msgid "Reload"
 msgstr "重新載入"
 
 #: src/components/ApprovalRulesSettings.tsx
+#: src/components/LoginFields.tsx
 #: src/components/VaultSettings.tsx
 #: src/pages/McpServersOverlay.tsx
 #: src/pages/ModelRoleSettings.tsx
@@ -4981,6 +5012,10 @@ msgstr "共享"
 #: src/pages/KnowledgeSection.tsx
 msgid "Shared memory"
 msgstr "共用記憶"
+
+#: src/components/VaultSettings.tsx
+msgid "Show"
+msgstr "顯示"
 
 #: src/pages/GroupPanel.tsx
 msgid "Show all"
@@ -5894,6 +5929,7 @@ msgstr "使用你的 API 金鑰"
 msgid "Using your API key. Free plan ends {freeUntil}."
 msgstr "正在使用你的 API 金鑰。免費方案將於 {freeUntil} 結束。"
 
+#: src/components/LoginFields.tsx
 #: src/components/VaultSettings.tsx
 #: src/pages/McpServersOverlay.tsx
 msgid "Value"
@@ -5934,6 +5970,10 @@ msgstr "排隊等候…"
 #: src/pages/shell/message-cards.tsx
 msgid "Waiting…"
 msgstr "等待中…"
+
+#: src/pages/SettingsOverlay.tsx
+msgid "Wallet"
+msgstr ""
 
 #: src/components/ModelCredits.tsx
 msgid "Web, desktop and mobile"
