@@ -523,7 +523,6 @@ export default function BotSettingsScreen() {
                   padding: 4,
                   borderRadius: 12,
                   backgroundColor: tokens.card,
-                  zIndex: 1,
                 }}
               >
                 <NativeSymbol ios="pencil" android="pencil" size={12} color={tokens.foreground} />
