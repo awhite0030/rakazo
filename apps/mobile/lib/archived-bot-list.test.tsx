@@ -18,13 +18,26 @@ const swift = vi.hoisted(() => ({
   lists: [] as Array<Array<{ name: string; value: unknown }>>,
   sectionHeaders: [] as unknown[],
   spacers: [] as Array<Array<{ name: string; value: unknown }>>,
+  menus: [] as Array<Array<{ name: string; value: unknown }>>,
   headerInset: 0,
   images: [] as string[],
 }));
 
 vi.mock("@expo/ui/swift-ui", () => {
   const wrap = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
-  const ContextMenu = Object.assign(wrap, { Trigger: wrap, Items: wrap });
+  const ContextMenu = Object.assign(
+    ({
+      children,
+      modifiers,
+    }: {
+      children?: ReactNode;
+      modifiers?: Array<{ name: string; value: unknown }>;
+    }) => {
+      swift.menus.push(modifiers ?? []);
+      return <div>{children}</div>;
+    },
+    { Trigger: wrap, Items: wrap },
+  );
   const SwipeActions = Object.assign(wrap, { Actions: wrap });
   const List = Object.assign(
     ({
@@ -118,6 +131,23 @@ vi.mock("./native", () => ({
 vi.mock("./native-controls", () => ({ iosAtLeast: () => true }));
 vi.mock("./floating-header", () => ({ useFloatingHeaderInset: () => swift.headerInset }));
 vi.mock("./i18n", () => ({ useI18n: () => ({ t: (text: string) => text }) }));
+
+it("gives archived bot and group rows a rectangular context-menu hit area", () => {
+  swift.menus.length = 0;
+  renderToStaticMarkup(
+    <ArchivedBotList
+      bots={[{ id: "b", name: "Ada" } as MobileBot]}
+      groups={[{ id: "g", name: "Crew" } as MobileGroup]}
+      pending={false}
+      onOpen={vi.fn()}
+      onRestore={vi.fn()}
+      onDelete={vi.fn()}
+      onRestoreGroup={vi.fn()}
+    />,
+  );
+  const rectangle = [{ name: "contentShape", value: { shape: "rectangle" } }];
+  expect(swift.menus).toEqual([rectangle, rectangle]);
+});
 
 it("lists archived groups after bots with a group symbol, name and Restore only", () => {
   const onRestoreGroup = vi.fn();
