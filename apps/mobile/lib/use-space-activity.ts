@@ -6,8 +6,6 @@ import { fetchSpaceActivity } from "./activity";
 import { useForegroundPoll } from "./foreground-poll";
 import { ACTIVITY_POLL_INTERVAL_MS } from "./poll-cadence";
 
-export type SpaceActivityStatus = "loading" | "loaded" | "failed";
-
 /** The Space's running and recent work, polled while the activity view is on and in sight. */
 export function useSpaceActivity({
   hasSession,
@@ -24,19 +22,13 @@ export function useSpaceActivity({
     active: [],
     recent: [],
   });
-  const [activityStatus, setActivityStatus] = useState<SpaceActivityStatus>("loading");
   const activityRequestId = useRef(0);
-
-  const clearActivity = useCallback(() => {
-    setActivity({ active: [], recent: [] });
-    setActivityStatus("loading");
-  }, []);
 
   const loadActivity = useCallback(async () => {
     if (spaceActionRef.current.busy || spaceActionRef.current.recoveryId) return;
     if (!hasSession || !activityMode) {
       activityRequestId.current += 1;
-      clearActivity();
+      setActivity({ active: [], recent: [] });
       return;
     }
     const requestId = ++activityRequestId.current;
@@ -44,15 +36,13 @@ export function useSpaceActivity({
       const next = await fetchSpaceActivity();
       if (requestId !== activityRequestId.current) return;
       setActivity(next);
-      setActivityStatus("loaded");
     } catch (error) {
       // Keep the last good snapshot on transient RPC failures; only drop stale responses.
       if (requestId !== activityRequestId.current) return;
-      setActivityStatus("failed");
       // False when the server refused rather than failed: asking again only polls it.
       return isRetryableError(error);
     }
-  }, [activityMode, clearActivity, hasSession]);
+  }, [activityMode, hasSession]);
 
   useForegroundPoll(loadActivity, ACTIVITY_POLL_INTERVAL_MS, hasSession && activityMode && inSight);
 
@@ -63,5 +53,5 @@ export function useSpaceActivity({
     [activityMode, hasSession],
   );
 
-  return { activity, activityStatus, clearActivity, activityRequestId, loadActivity };
+  return { activity, setActivity, activityRequestId, loadActivity };
 }
