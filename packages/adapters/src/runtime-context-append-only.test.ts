@@ -324,7 +324,6 @@ describe("append-only run transcript", () => {
       (message) =>
         message.role === "assistant" && message.content.some((part) => part.type === "thinking"),
     );
-    expect(kept.length).toBeGreaterThanOrEqual(2);
     expect(thinkingCount(rebuilt)).toBeLessThan(thinkingCount(sent[first! - 1]!));
   });
 

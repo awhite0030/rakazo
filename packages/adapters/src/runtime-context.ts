@@ -542,8 +542,6 @@ export function createRuntimeContextPolicy(
       cacheWarmth: predictedCache,
       recentExchanges:
         retainShortHistory || standaloneHistoryFallback ? messages.length : 8 + laterUserMessages,
-      // Eight exchanges is a floor: a request often depends on a decision made before them
-      // without sounding like a question about the past, so the bot never thinks to search.
       ...(strategy === "retrieval"
         ? { earlier: { before: currentIndex, tokens: shortHistoryAllowance } }
         : {}),
@@ -555,15 +553,17 @@ export function createRuntimeContextPolicy(
       selected = doSelect(retained);
       const protectedOlder = protectedIndexes.filter((index) => index < currentIndex).length;
       if (selected.droppedMessages > currentIndex - protectedOlder) {
-        messages = shortenOlderResults(false);
-        selected = doSelect(messages);
+        const shortened = shortenOlderResults(false);
+        selected = doSelect(shortened);
+        messages = selected.messages;
       } else {
-        messages = retained;
+        messages = selected.messages;
       }
     } catch (error) {
       if (error instanceof ContextBudgetError) {
-        messages = shortenOlderResults(false);
-        selected = doSelect(messages);
+        const shortened = shortenOlderResults(false);
+        selected = doSelect(shortened);
+        messages = selected.messages;
       } else {
         throw error;
       }
