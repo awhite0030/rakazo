@@ -534,17 +534,7 @@ export function createRuntimeContextPolicy(
       });
     const retained = shortenOlderResults(true);
     // Fall back before selection can discard older progress to make room for whole results.
-    const retainedTokens = retained.reduce(
-      (total, message) =>
-        total +
-        estimateContextTokens(
-          providerContextPrefix("", [], [message]).messages[0],
-          options.imageTokens,
-        ),
-      fixed,
-    );
-    messages = retainedTokens <= contextWindow - reserve ? retained : shortenOlderResults(false);
-    const selected = selectContext(messages, {
+    const selectOptions = {
       budget,
       strategy,
       protectedIndexes,
@@ -557,7 +547,27 @@ export function createRuntimeContextPolicy(
       ...(strategy === "retrieval"
         ? { earlier: { before: currentIndex, tokens: shortHistoryAllowance } }
         : {}),
-    });
+    };
+
+    const doSelect = (source: Message[]) => selectContext(source, selectOptions);
+    let selected: ReturnType<typeof doSelect>;
+    try {
+      selected = doSelect(retained);
+      const protectedOlder = protectedIndexes.filter((index) => index < currentIndex).length;
+      if (selected.droppedMessages > currentIndex - protectedOlder) {
+        messages = shortenOlderResults(false);
+        selected = doSelect(messages);
+      } else {
+        messages = retained;
+      }
+    } catch (error) {
+      if (error instanceof ContextBudgetError) {
+        messages = shortenOlderResults(false);
+        selected = doSelect(messages);
+      } else {
+        throw error;
+      }
+    }
     const shortenedStructuredResults = selected.messages.filter((message) => {
       if (message.role !== "toolResult") return false;
       try {
