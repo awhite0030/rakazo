@@ -9,6 +9,7 @@ import {
   DEAD_JOB_RETENTION_DAYS,
   InMemoryJobQueue,
   JOB_DRAIN_TIMEOUT_MS,
+  JOB_IDLE_DRAIN_TIMEOUT_MS,
 } from "./wakeup.js";
 
 function handlers(): BackgroundJobHandlers {
@@ -479,6 +480,10 @@ describe("createDeadJobPruner", () => {
 });
 
 describe("JOB_DRAIN_TIMEOUT_MS", () => {
+  it("uses an idle deadline that is much shorter than the full busy timeout", () => {
+    expect(JOB_IDLE_DRAIN_TIMEOUT_MS).toBeLessThan(JOB_DRAIN_TIMEOUT_MS);
+  });
+
   it("ends before the idle sweep would replace a sleep job that is still draining", () => {
     expect(JOB_DRAIN_TIMEOUT_MS).toBeLessThan(ABANDONED_SUSPEND_CLAIM_MS);
   });
