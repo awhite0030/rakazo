@@ -394,6 +394,60 @@ describe("reserved Graphile workloads", () => {
 });
 
 describe("GraphileJobWorkerHost runner lifecycle", () => {
+  it("stops waiting for a hung runner quickly when idle", async () => {
+    const { runner } = mockRunner();
+    runner.stop = vi.fn(() => new Promise<void>(() => {})); // Hang forever
+    run.mockResolvedValueOnce(runner);
+
+    // Very short idle drain, long busy drain
+    const host = new GraphileJobWorkerHost({} as Pool, {
+      concurrency: 1,
+      idleDrainTimeoutMs: 5,
+      drainTimeoutMs: 1000,
+    });
+    await host.start(handlers());
+
+    // Stop should resolve quickly despite runner.stop hanging, because it's idle
+    const started = Date.now();
+    await host.stop();
+    expect(Date.now() - started).toBeLessThan(100);
+    expect(runner.stop).toHaveBeenCalled();
+  });
+
+  it("waits for the full drain timeout when busy and the runner hangs", async () => {
+    const { runner } = mockRunner();
+    runner.stop = vi.fn(() => new Promise<void>(() => {})); // Hang forever
+    run.mockResolvedValueOnce(runner);
+
+    // Short drain timeout for the test
+    const host = new GraphileJobWorkerHost({} as Pool, {
+      concurrency: 1,
+      idleDrainTimeoutMs: 1,
+      drainTimeoutMs: 20,
+    });
+
+    const target = handlers();
+    const hung = deferred();
+    target["run.continue"] = async (_payload, execution) => {
+      execution!.onRunStarted();
+      await hung.promise;
+    };
+
+    await host.start(target);
+
+    // Make the worker busy
+    await run.mock.calls[0]![0].taskList["run.continue"]({ runId: "hung-run" });
+
+    const started = Date.now();
+    try {
+      await host.stop();
+      expect(Date.now() - started).toBeGreaterThanOrEqual(15);
+      expect(runner.stop).toHaveBeenCalled();
+    } finally {
+      hung.resolve();
+    }
+  });
+
   beforeEach(() => {
     vi.mocked(getHeapStatistics).mockReturnValue({
       used_heap_size: 0,

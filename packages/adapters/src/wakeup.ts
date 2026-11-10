@@ -203,6 +203,7 @@ function abandonment() {
  * replaces a sleep that is still draining.
  */
 export const JOB_DRAIN_TIMEOUT_MS = 45 * 60_000;
+export const JOB_IDLE_DRAIN_TIMEOUT_MS = 2_000;
 
 export class GraphileJobWorkerHost implements JobWorkerHost {
   private runner: Runner | undefined;
@@ -228,6 +229,8 @@ export class GraphileJobWorkerHost implements JobWorkerHost {
       sleep?: (ms: number) => Promise<void>;
       /** Test seam for JOB_DRAIN_TIMEOUT_MS. */
       drainTimeoutMs?: number;
+      /** Test seam for JOB_IDLE_DRAIN_TIMEOUT_MS. */
+      idleDrainTimeoutMs?: number;
     } = {},
   ) {}
 
@@ -258,18 +261,37 @@ export class GraphileJobWorkerHost implements JobWorkerHost {
     const started = Date.now();
     const busy = this.running.size > 0 || this.executions.activeCount > 0;
     if (busy) getLogger().info("jobs.draining", this.runningBindings());
+
     const deadline = setTimeout(() => {
       getLogger().warn("jobs.drain_timed_out", this.runningBindings());
       this.abandoned.abandon();
     }, this.options.drainTimeoutMs ?? JOB_DRAIN_TIMEOUT_MS);
+
+    let idleDeadline: ReturnType<typeof setTimeout> | undefined;
+    const idleWait = !busy
+      ? new Promise<void>((resolve) => {
+          idleDeadline = setTimeout(
+            resolve,
+            this.options.idleDrainTimeoutMs ?? JOB_IDLE_DRAIN_TIMEOUT_MS,
+          );
+        })
+      : new Promise<void>(() => {});
+
     try {
-      await this.runner?.stop();
+      const shutdown = (async () => {
+        if (this.runner) {
+          await this.runner.stop().catch(() => undefined);
+        }
+        // The queue has stopped accepting deliveries. Handed-off runs still own
+        // leases and must finish before their database and providers are closed.
+        await Promise.race([draining, this.abandoned.promise.catch(() => undefined)]);
+        await this.superviseTask?.catch(() => undefined);
+      })();
+
+      await Promise.race([shutdown, this.abandoned.promise.catch(() => undefined), idleWait]);
     } finally {
-      // The queue has stopped accepting deliveries. Handed-off runs still own
-      // leases and must finish before their database and providers are closed.
-      await Promise.race([draining, this.abandoned.promise.catch(() => undefined)]);
+      if (idleDeadline) clearTimeout(idleDeadline);
       clearTimeout(deadline);
-      await this.superviseTask?.catch(() => undefined);
       this.runner = undefined;
       this.superviseTask = undefined;
       this.handlers = undefined;
