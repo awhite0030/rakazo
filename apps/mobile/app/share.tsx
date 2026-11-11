@@ -57,7 +57,7 @@ export default function ShareRoute() {
     // Removal must preserve the share for thread.tsx to claim it.
     if (!getIncomingShare()) return;
     leave();
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       navigation.dispatch({
         type: "RESET",
         payload: {
@@ -68,7 +68,7 @@ export default function ShareRoute() {
           ],
         },
       });
-    }, 0);
+    });
   };
   const preview = share ? sharePreview(share) : null;
 

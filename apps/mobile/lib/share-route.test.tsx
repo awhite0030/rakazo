@@ -105,18 +105,30 @@ describe("share route", () => {
     expect(state.dismissTo).toHaveBeenCalledWith("/");
   });
   it("preserves the share for the selected thread and removes the target screen", async () => {
-    await render();
-    await act(async () => container.querySelectorAll("button")[1]?.click());
-    expect(state.guarded).toBe(false);
-    expect(state.allowRemoval).toHaveBeenCalledOnce();
-    expect(state.cancel).not.toHaveBeenCalled();
-    expect(state.dismissTo).not.toHaveBeenCalled();
-    expect(state.reset).toHaveBeenCalledWith({
-      type: "RESET",
-      payload: {
-        index: 1,
-        routes: [{ name: "index" }, { name: "thread", params: { botId: "example", name: "Bot" } }],
-      },
-    });
+    const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = (cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    };
+    try {
+      await render();
+      await act(async () => container.querySelectorAll("button")[1]?.click());
+      expect(state.guarded).toBe(false);
+      expect(state.allowRemoval).toHaveBeenCalledOnce();
+      expect(state.cancel).not.toHaveBeenCalled();
+      expect(state.dismissTo).not.toHaveBeenCalled();
+      expect(state.reset).toHaveBeenCalledWith({
+        type: "RESET",
+        payload: {
+          index: 1,
+          routes: [
+            { name: "index" },
+            { name: "thread", params: { botId: "example", name: "Bot" } },
+          ],
+        },
+      });
+    } finally {
+      globalThis.requestAnimationFrame = originalRequestAnimationFrame;
+    }
   });
 });

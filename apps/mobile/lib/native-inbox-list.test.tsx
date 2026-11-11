@@ -46,7 +46,7 @@ vi.mock("@expo/ui/swift-ui/modifiers", () => {
       swift.geometry.push(value as (frame: { width: number }) => void);
     return { name, value };
   };
-  return Object.fromEntries(
+  const exports = Object.fromEntries(
     [
       "foregroundStyle",
       "frame",
@@ -61,8 +61,10 @@ vi.mock("@expo/ui/swift-ui/modifiers", () => {
       "onGeometryChange",
       "refreshable",
       "scrollContentBackground",
+      "contentShape",
     ].map((name) => [name, modifier(name)]),
   );
+  return { ...exports, shapes: { rectangle: () => "rectangle" } };
 });
 vi.mock("react-native", () => ({
   findNodeHandle: () => 1,
@@ -169,7 +171,7 @@ it("puts chat rows in the list as rows and hosts every other row's content", () 
   const heading = container.querySelector<HTMLElement>('[data-row="heading:work"]')!;
   expect(heading.dataset.native).toBe("");
   expect(heading.closest('[data-ui="Group"]')?.getAttribute("data-modifiers")).toBe(
-    "listRowInsets listRowSeparator listRowBackground onAppear onDisappear",
+    "listRowInsets listRowSeparator listRowBackground onAppear onDisappear contentShape",
   );
   expect(container.querySelector("[data-footer]")).not.toBeNull();
   act(() => root.unmount());
