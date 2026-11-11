@@ -168,7 +168,7 @@ export async function releaseComputerControl(
   await revokeScreenControl(
     deps,
     bot.computer,
-    computerContext(actor, controlBotId, "screen.release"),
+    await computerScreenContext(deps.prisma, actor, bot.computer.id, controlBotId, "screen.release"),
     controlLeaseId,
   );
 
