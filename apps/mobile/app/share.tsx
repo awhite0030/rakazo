@@ -57,13 +57,18 @@ export default function ShareRoute() {
     // Removal must preserve the share for thread.tsx to claim it.
     if (!getIncomingShare()) return;
     leave();
-    navigation.dispatch({
-      type: "RESET",
-      payload: {
-        index: 1,
-        routes: [{ name: "index" }, { name: "thread", params: { botId: bot.id, name: bot.name } }],
-      },
-    });
+    setTimeout(() => {
+      navigation.dispatch({
+        type: "RESET",
+        payload: {
+          index: 1,
+          routes: [
+            { name: "index" },
+            { name: "thread", params: { botId: bot.id, name: bot.name } },
+          ],
+        },
+      });
+    }, 0);
   };
   const preview = share ? sharePreview(share) : null;
 

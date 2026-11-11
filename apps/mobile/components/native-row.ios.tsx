@@ -29,7 +29,10 @@ export function NativeRow({ menu, children }: { menu?: NativeRowMenu; children: 
   const row = useContext(NativeListRowContext);
   if (!row) return <>{children}</>;
   const content = <NativeRowContent width={row.width}>{children}</NativeRowContent>;
-  if (!menu) return <Group modifiers={row.modifiers}>{content}</Group>;
+  if (!menu)
+    return (
+      <Group modifiers={[...row.modifiers, contentShape(shapes.rectangle())]}>{content}</Group>
+    );
   return (
     <ContextMenu modifiers={[...row.modifiers, contentShape(shapes.rectangle())]}>
       <ContextMenu.Trigger>{content}</ContextMenu.Trigger>
