@@ -152,7 +152,6 @@ export function GeneralSettingsPanels({
   const [timezonePending, setTimezonePending] = useState(false);
   const [timezoneError, setTimezoneError] = useState<string | null>(null);
   const deviceTimezone = localTimezone();
-  const selectedTimezone = timezone ?? deviceTimezone;
 
   function chooseLocale(next: UiLocale) {
     if (next === locale) return;
@@ -366,12 +365,12 @@ export function GeneralSettingsPanels({
                 <NativeSelect
                   aria-labelledby={timezoneId}
                   data-testid="timezone-select"
-                  value={selectedTimezone}
+                  value={timezone ?? deviceTimezone}
                   disabled={timezonePending}
                   onChange={(event) => void chooseTimezone(event.target.value)}
                   className="w-56 max-w-full"
                 >
-                  {timezoneOptions(selectedTimezone).map((zone) => (
+                  {timezoneOptions(timezone ?? deviceTimezone).map((zone) => (
                     <NativeSelectOption key={zone} value={zone}>
                       {zone.replaceAll("_", " ")}
                     </NativeSelectOption>
@@ -379,7 +378,7 @@ export function GeneralSettingsPanels({
                 </NativeSelect>
               }
             >
-              {!sameTimeZone(selectedTimezone, deviceTimezone) ? (
+              {!timezone || !sameTimeZone(timezone, deviceTimezone) ? (
                 <div className="mt-2 flex justify-end">
                   <Button
                     variant="outline"

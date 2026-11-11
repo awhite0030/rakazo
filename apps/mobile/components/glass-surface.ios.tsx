@@ -26,13 +26,7 @@ export function GlassSurface({
   ];
   return (
     <View style={style}>
-      {/* Near the home indicator the glass would otherwise stop at the safe area. */}
-      <Host
-        colorScheme={scheme}
-        ignoreSafeArea="container"
-        pointerEvents="none"
-        style={StyleSheet.absoluteFill}
-      >
+      <Host colorScheme={scheme} pointerEvents="none" style={StyleSheet.absoluteFill}>
         {shape === "circle" ? (
           <Circle modifiers={modifiers} />
         ) : shape === "roundedRectangle" ? (

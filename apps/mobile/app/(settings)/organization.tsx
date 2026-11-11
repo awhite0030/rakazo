@@ -1,7 +1,6 @@
 import { ph } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
-import { canDeleteOrganization } from "@rakazo/core";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -28,9 +27,7 @@ export default function OrganizationSettings() {
   const query = useOrganizations();
   const organization = activeOrganization(query.data);
   const [draft, setDraft] = useState<string | null>(null);
-  // The plan choice links here with the deletion confirmation already open.
-  const deleteRequested = useLocalSearchParams<{ delete?: string }>().delete === "1";
-  const [confirming, setConfirming] = useState(deleteRequested);
+  const [confirming, setConfirming] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +47,9 @@ export default function OrganizationSettings() {
   }
   const current = organization;
   const name = draft ?? current.name;
-  const canDelete = canDeleteOrganization(query.data?.organizations ?? [], current);
+  const canDelete =
+    current.canManage &&
+    (query.data?.organizations.filter((each) => each.canManage).length ?? 0) > 1;
 
   async function rename() {
     const next = name.trim();

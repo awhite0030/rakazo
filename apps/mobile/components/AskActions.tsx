@@ -115,7 +115,6 @@ export function AskActions({
               label={askActionLabel(action, { approval, site })}
               prominence={emphasized ? "primary" : "secondary"}
               fill={!approval}
-              align={approval ? "center" : "start"}
               disabled={disabled || submitting}
               busy={pendingAction === action.id}
               onPress={() => void submit(action.id)}
