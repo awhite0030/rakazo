@@ -19,6 +19,7 @@ function allowanceDeps(input: {
     status: string;
     cancelAtPeriodEnd?: boolean;
     currentPeriodStartsAt?: Date | null;
+    currentPeriodEndsAt?: Date | null;
     byokInterval?: "month" | "year";
     byokTier?: ByokTier | null;
     byokPriceCents?: number | null;
@@ -42,6 +43,7 @@ function allowanceDeps(input: {
                 status: input.subscription?.status ?? null,
                 cancelAtPeriodEnd: input.subscription?.cancelAtPeriodEnd ?? false,
                 currentPeriodStartsAt: input.subscription?.currentPeriodStartsAt ?? null,
+                currentPeriodEndsAt: input.subscription?.currentPeriodEndsAt ?? null,
                 byokInterval: input.subscription?.byokInterval ?? null,
                 byokTier: input.subscription?.byokTier ?? null,
                 byokPriceCents: input.subscription?.byokPriceCents ?? null,
@@ -78,7 +80,7 @@ describe("computer allowance", () => {
       mode: "byok",
       hours: [{ kind: "daytona", hours: 2.5 }],
     });
-    expect(await sandboxAllowance(deps, "organization")).toEqual({
+    expect(await sandboxAllowance(deps, "organization")).toMatchObject({
       limitMicros: 5_000_000,
       usedMicros: 2.5 * SANDBOX_HOURLY_COST_MICROS,
     });
@@ -236,6 +238,52 @@ describe("computer allowance", () => {
       },
     });
     expect((await sandboxAllowance(deps, "organization"))?.usedMicros).toBe(400_000);
+  });
+});
+
+
+describe("computer hours reset at", () => {
+  it("gives a monthly plan's period end", async () => {
+    const periodEndsAt = new Date("2026-03-20T14:00:00.000Z");
+    const { deps } = allowanceDeps({
+      billing: true,
+      mode: "byok",
+      subscription: { status: "active", currentPeriodEndsAt: periodEndsAt },
+    });
+    expect((await sandboxAllowance(deps, "organization"))?.resetAt).toEqual(periodEndsAt);
+  });
+
+  it("gives a yearly plan's next monthly anniversary", async () => {
+    const periodStart = new Date("2026-01-31T14:00:00.000Z");
+    const reset = async (now: string) => {
+      const { deps } = allowanceDeps({
+        billing: true,
+        mode: "byok",
+        subscription: {
+          status: "active",
+          currentPeriodStartsAt: periodStart,
+          currentPeriodEndsAt: new Date("2027-01-31T14:00:00.000Z"),
+          byokInterval: "year",
+        },
+      });
+      return (await sandboxAllowance(deps, "organization", new Date(now)))?.resetAt;
+    };
+    expect(await reset("2026-01-31T15:00:00.000Z")).toEqual(new Date("2026-02-28T14:00:00.000Z"));
+    expect(await reset("2026-02-28T14:00:00.000Z")).toEqual(new Date("2026-03-31T14:00:00.000Z"));
+    expect(await reset("2026-03-10T00:00:00.000Z")).toEqual(new Date("2026-03-31T14:00:00.000Z"));
+  });
+
+  it("gives the next UTC month start without a live subscription", async () => {
+    const { deps } = allowanceDeps({
+      billing: true,
+      mode: "byok",
+      subscription: {
+        status: "canceled",
+        currentPeriodStartsAt: new Date("2026-02-20T14:00:00.000Z"),
+      },
+    });
+    const now = new Date("2026-03-17T08:30:00.000Z");
+    expect((await sandboxAllowance(deps, "organization", now))?.resetAt).toEqual(new Date("2026-04-01T00:00:00.000Z"));
   });
 });
 

@@ -19,7 +19,7 @@ export async function sandboxAllowance(
   deps: AllowanceDeps,
   organizationId: string,
   now = new Date(),
-): Promise<{ limitMicros: number; usedMicros: number } | null> {
+): Promise<{ limitMicros: number; usedMicros: number; resetAt: Date | null } | null> {
   const plan = await sandboxAllowancePlan(deps.prisma, organizationId, now);
   if (plan === null) return null;
   const runs = await sandboxRunHours(deps.prisma, organizationId, plan.since, now);
@@ -32,11 +32,12 @@ export async function sandboxAllowance(
   return {
     limitMicros: (plan.limitCents * MICROS_PER_DOLLAR) / 100,
     usedMicros: Math.round(usedMicros),
+    resetAt: plan.resetAt,
   };
 }
 
 /** Whole hours, or tenths under one hour, so time that is left never reads as zero. */
-export function sandboxHoursLeft(allowance: { limitMicros: number; usedMicros: number }): number {
+export function sandboxHoursLeft(allowance: { limitMicros: number; usedMicros: number; resetAt?: Date | null }): number {
   const hours =
     Math.max(0, allowance.limitMicros - allowance.usedMicros) / SANDBOX_HOURLY_COST_MICROS;
   return hours >= 1 ? Math.floor(hours) : Math.floor(hours * 10) / 10;
