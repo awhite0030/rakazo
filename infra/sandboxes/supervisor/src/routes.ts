@@ -931,6 +931,7 @@ app.post("/computers/:id/screen-mode", async (c) => {
           } else {
             delete slot.controlled;
             delete slot.controlToken;
+            slot.idleAt = Date.now();
           }
         }
       }
