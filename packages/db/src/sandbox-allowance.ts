@@ -37,7 +37,7 @@ export async function sandboxAllowancePlan(
   prisma: PrismaClient,
   organizationId: string,
   now = new Date(),
-): Promise<{ limitCents: number; since: Date } | null> {
+): Promise<{ limitCents: number; since: Date; resetAt: Date | null } | null> {
   const [settings, organization] = await Promise.all([
     prisma.deploymentSettings.findUnique({
       where: { id: "default" },
@@ -53,6 +53,7 @@ export async function sandboxAllowancePlan(
             status: true,
             cancelAtPeriodEnd: true,
             currentPeriodStartsAt: true,
+            currentPeriodEndsAt: true,
             byokInterval: true,
             byokTier: true,
             byokPriceCents: true,
@@ -72,6 +73,12 @@ export async function sandboxAllowancePlan(
         ? latestMonthlyAnniversary(periodStart, now)
         : periodStart
       : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const resetAt =
+    live
+      ? billing?.byokInterval === "year" && periodStart
+        ? nextMonthlyAnniversary(periodStart, now)
+        : billing?.currentPeriodEndsAt ?? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
+      : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
   const tier = byokTierOf(organization?.modelCredits?.mode, billing);
   const creditShare = (cents: number) =>
     Math.floor((cents * CREDITS_SANDBOX_ALLOWANCE_PERCENT) / 100);
@@ -83,7 +90,7 @@ export async function sandboxAllowancePlan(
       _min: { appliedAt: true },
     });
     if (granted._sum.creditCents && granted._min.appliedAt)
-      return { limitCents: creditShare(granted._sum.creditCents), since: granted._min.appliedAt };
+      return { limitCents: creditShare(granted._sum.creditCents), since: granted._min.appliedAt, resetAt: null };
   }
   const limitCents =
     billing?.status === "trialing"
@@ -93,7 +100,7 @@ export async function sandboxAllowancePlan(
       : tier
         ? BYOK_TIERS[tier].computerAllowanceCents
         : creditShare(billing?.creditAmountCents ?? 0);
-  return { limitCents, since };
+  return { limitCents, since, resetAt };
 }
 
 /**
@@ -164,4 +171,22 @@ export async function sandboxRunHours(
       AND (r."endedAt" IS NULL OR r."endedAt" > ${since}::timestamp(3))
     GROUP BY r."kind"`,
   );
+}
+
+/** The next monthly anniversary of `start` strictly after `now`, on a shorter month's last day. */
+function nextMonthlyAnniversary(start: Date, now: Date): Date {
+  const monthsLater = (months: number) => {
+    const shifted = new Date(start);
+    shifted.setUTCDate(1);
+    shifted.setUTCMonth(start.getUTCMonth() + months);
+    const lastDay = new Date(
+      Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    shifted.setUTCDate(Math.min(start.getUTCDate(), lastDay));
+    return shifted;
+  };
+  const months =
+    (now.getUTCFullYear() - start.getUTCFullYear()) * 12 + now.getUTCMonth() - start.getUTCMonth();
+  const anniversary = monthsLater(months);
+  return anniversary > now ? anniversary : monthsLater(months + 1);
 }

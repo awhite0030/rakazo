@@ -30,7 +30,7 @@ export function useThreadRunError(run: MobileSnapshot["run"] | undefined, botId?
       active = false;
     };
   }, [needsPlan, failedRunId]);
-  const hoursOut = needsPlan && billing ? computerHoursOutCopy(computerHoursOut(billing)) : null;
+  const hoursOut = needsPlan && billing ? computerHoursOutCopy(computerHoursOut(billing), billing.computerHoursResetAt) : null;
   const normalizedRunError =
     classified && hoursOut ? { ...classified, summary: hoursOut.summary } : classified;
   const label = needsPlan

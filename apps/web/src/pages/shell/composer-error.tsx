@@ -1,6 +1,7 @@
 import { i18n } from "@lingui/core";
 import { useLingui } from "@lingui/react/macro";
 import { computerHoursOut } from "@rakazo/contracts";
+import { formatBillingDate } from "../../lib/billing";
 import { isModelRequiredSendError, normalizeRunError } from "@rakazo/core";
 import { translateRunError } from "@rakazo/i18n/run-error";
 import { Button } from "@rakazo/ui-web";
@@ -128,7 +129,9 @@ export function ComposerError({
       : hoursOut === "cancelled_trial"
         ? t`Cancelled trials have no computer hours.`
         : hoursOut === "plan"
-          ? t`This month's computer hours are used up.`
+          ? billing?.computerHoursResetAt
+            ? t`This month's computer hours are used up. Resets ${formatBillingDate(billing.computerHoursResetAt, i18n.locale || "en")}.`
+            : t`This month's computer hours are used up.`
           : null;
   const recoveryAction =
     recovery === "model"

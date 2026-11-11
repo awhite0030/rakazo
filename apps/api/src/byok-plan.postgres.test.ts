@@ -275,6 +275,7 @@ dbTests("own-key plan", () => {
     vi.mocked(sandboxAllowance).mockResolvedValue({
       limitMicros: 40_000_000,
       usedMicros: 25_000_000,
+      resetAt: new Date(),
     });
     await expect(metered.changeTier(actor, "pro")).rejects.toMatchObject({ code: "CONFLICT" });
     await expect(metered.changeTier(actor, "standard")).rejects.toMatchObject({
@@ -283,6 +284,7 @@ dbTests("own-key plan", () => {
     vi.mocked(sandboxAllowance).mockResolvedValue({
       limitMicros: 40_000_000,
       usedMicros: 15_000_000,
+      resetAt: new Date(),
     });
     await metered.changeTier(actor, "pro");
     await expect(metered.status(actor)).resolves.toMatchObject({ byokTier: "pro" });

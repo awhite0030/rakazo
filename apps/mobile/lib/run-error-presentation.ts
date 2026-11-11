@@ -38,7 +38,11 @@ function readable(value: string) {
 }
 
 /** Why computers ran out of hours, and the billing action that gives them more. */
-export function computerHoursOutCopy(reason: ReturnType<typeof computerHoursOut>) {
+export function computerHoursOutCopy(
+  reason: ReturnType<typeof computerHoursOut>,
+  resetAt?: string | null,
+  locale = "en"
+) {
   switch (reason) {
     case "trial":
       return {
@@ -48,7 +52,13 @@ export function computerHoursOutCopy(reason: ReturnType<typeof computerHoursOut>
     case "cancelled_trial":
       return { summary: t`Cancelled trials have no computer hours.`, action: t`Renew plan` };
     default:
-      return { summary: t`This month's computer hours are used up.`, action: t`Upgrade` };
+      const date = resetAt ? new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(resetAt)) : null;
+      return {
+        summary: date
+          ? t`This month's computer hours are used up. Resets ${date}.`
+          : t`This month's computer hours are used up.`,
+        action: t`Upgrade`,
+      };
   }
 }
 
